@@ -1,15 +1,8 @@
 <template>
-    <li>{{ msg }}</li>
+  <div class="xxx">
+  </div>
 </template>
 
-<script>
-export default {
-  name: 'ListItem',
-  props: {
-    msg: String
-  }
-}
+<script setup lang="ts">
 </script>
-
-<style>
-</style>
+<style scoped></style>

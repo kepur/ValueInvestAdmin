@@ -1,12 +1,8 @@
 <template>
-  <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png">
+  <div class="xxx">
   </div>
 </template>
 
-<script>
-// @ is an alias to /src
-export default {
-  name: 'HomeView',
-}
+<script setup lang="ts">
 </script>
+<style scoped></style>

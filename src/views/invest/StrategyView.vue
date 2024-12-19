@@ -1,7 +1,7 @@
 <template>
-  <div class="home">
+  <div class="xxx">
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
 </script>
