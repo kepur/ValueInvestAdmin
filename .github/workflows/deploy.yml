@@ -30,8 +30,8 @@ jobs:
           ssh -o StrictHostKeyChecking=no root@164.152.167.71 << 'EOF'
             echo "进入项目目录..."
             cd /opt/valueInvestCoin/ValueInvestAdmin || exit 1
-
-            echo "拉取最新代码..."
+            echo "执行权限更改..."
+            chmod +x autobot.sh
             echo "重启服务..."
             ./autobot.sh restart  # 重启服务脚本
             echo "部署完成！"
