@@ -1,0 +1,38 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main  # 监听 main 分支的提交
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest  # 使用 GitHub Actions 提供的 Ubuntu 环境
+
+    steps:
+      # 检出代码
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 设置 SSH 密钥
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SGSVR }}  # 使用 GitHub Secrets 中的私钥
+
+      # 检查 SSH 密钥是否加载
+      - name: Verify SSH key
+        run: ssh-add -L
+
+      # 连接到远程服务器并执行命令
+      - name: Pull latest code and restart server
+        run: |
+          ssh -o StrictHostKeyChecking=no root@164.152.167.71 << 'EOF'
+            echo "进入项目目录..."
+            cd /opt/valueInvestCoin/ValueInvestAdmin || exit 1
+
+            echo "拉取最新代码..."
+            echo "重启服务..."
+            ./autobot.sh restart  # 重启服务脚本
+            echo "部署完成！"
+          EOF

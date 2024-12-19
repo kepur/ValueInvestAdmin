@@ -1,3 +1,33 @@
+
+<script lang="ts" setup>
+import { useAuthStore } from '@/stores/auth'
+import {
+  Avatar,
+  Setting,
+  Film,
+  Opportunity,
+  UserFilled,
+  Switch,
+  Aim,
+  Coin
+} from '@element-plus/icons-vue'
+import { computed } from 'vue'
+import { ElMessage } from 'element-plus'
+
+const authStore = useAuthStore()
+const { userRoles } = authStore
+
+const isAdmin = computed(() => userRoles.includes('admin'))
+
+const handleLogout = async () => {
+  try {
+    await authStore.logout()
+    ElMessage.success('Logout successful')
+  } catch (error) {
+    ElMessage.error('Logout failed')
+  }
+}
+</script>
 <template>
   <div class="index">
     <div class="left">
@@ -11,7 +41,8 @@
         :router="true"
       >
         <!-- Only Admin -->
-        <el-sub-menu v-if="isAdmin" index="6">
+        <!-- <el-sub-menu v-if="isAdmin" index="6"> -->
+        <el-sub-menu index="6">
           <template #title>
             <el-icon><Setting /></el-icon>
             <span>系统管理</span>
@@ -89,7 +120,7 @@
         >
           <el-menu-item index="/index/loginhistory">
             <el-icon><Switch /></el-icon>
-            LoginHistory
+            登录历史
           </el-menu-item>
           <el-sub-menu index="2">
             <template #title>
@@ -98,7 +129,7 @@
             </template>
             <el-menu-item index="/index/userprofile">用户信息</el-menu-item>
             <el-menu-item index="/index/changepassword">更改密码</el-menu-item>
-            <el-menu-item @click="handleLogout">Logout</el-menu-item>
+            <el-menu-item @click="handleLogout">退出登录</el-menu-item>
           </el-sub-menu>
         </el-menu>
       </div>
@@ -109,37 +140,6 @@
   </div>
 </template>
 
-<script lang="ts" setup>
-import { useAuthStore } from '@/stores/auth'
-import {
-  Avatar,
-  Notebook,
-  Headset,
-  Setting,
-  Film,
-  Opportunity,
-  UserFilled,
-  Switch,
-  HomeFilled,
-  Coin
-} from '@element-plus/icons-vue'
-import { computed } from 'vue'
-import { ElMessage } from 'element-plus'
-
-const authStore = useAuthStore()
-// const { userRoles } = authStore
-
-// const isAdmin = computed(() => userRoles.includes('admin'))
-
-// const handleLogout = async () => {
-//   try {
-//     await authStore.logout()
-//     ElMessage.success('Logout successful')
-//   } catch (error) {
-//     ElMessage.error('Logout failed')
-//   }
-// }
-</script>
 
 <style scoped lang="scss">
 .index {

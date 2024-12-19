@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-button type="primary" @click="openDialog(null)">Create New User</el-button>
+    <el-button type="primary" @click="openCreateUserdialog">创建用户</el-button>
     <el-table :data="users" style="width: 100%" v-loading="loading">
       <el-table-column prop="id" label="ID" width="60"></el-table-column>
       <el-table-column prop="username" label="Username"></el-table-column>
@@ -13,7 +13,7 @@
       <el-table-column prop="created_at" label="Created At"></el-table-column>
       <el-table-column label="Actions" width="180">
         <template #default="scope">
-          <el-button @click="openDialog(scope.row)">Edit</el-button>
+          <el-button @click="openCreateUserdialog(scope.row)">Edit</el-button>
           <el-button size="small" type="danger" @click="deleteUser(scope.row.id)">Delete</el-button>
         </template>
       </el-table-column>
@@ -90,9 +90,9 @@ const formData = ref<User>({
   password: '',
   roles: []
 })
-const formRef = ref() // Reference to the form instance
+const formRef = ref() // 
 
-const allRoles = ref<{ name: string }[]>([]) // All available roles
+const allRoles = ref<{ name: string }[]>([]) // 
 
 // Validation rules
 const rules = {
@@ -133,21 +133,19 @@ const loadAllRoles = async () => {
   }
 }
 
-// Function to open the dialog for creating or editing a user
-const openDialog = (user: User | null) => {
+const openCreateUserdialog = (user: User | null) => {
+  console.log("已经点击创建")
   if (user) {
-    formData.value = { ...user, password: '' } // Clear password field when editing
-    // When editing, password is optional
+    formData.value = { ...user, password: '' }
+
     rules.password[0].required = false
   } else {
     formData.value = { id: null, username: '', email: '', password: '', roles: [] }
-    // When creating, password is required
     rules.password[0].required = true
   }
   dialogVisible.value = true
 }
 
-// Function to submit the form data to the backend
 const submitForm = async () => {
   if (!formRef.value) return
   await formRef.value.validate(async (valid: boolean) => {

@@ -1,19 +1,5 @@
 <template>
-  <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png">
+  <div class="about">
+    <h1>This is an about page</h1>
   </div>
-  {{ myname  }}
 </template>
-
-<script>
-// @ is an alias to /src
-
-export default {
-  name: 'HomeView',
-  computed:{
-    myname(){
-      return this.$store.state.name;
-    }
-  }
-}
-</script>
