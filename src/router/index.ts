@@ -36,7 +36,7 @@ export const router = createRouter({
         {
           path: 'auditlog',
           name: 'auditlog',
-          component: () => import('../views/AuditLogView.vue'),
+          component: () => import('../views/AuditLog.vue'),
           meta: { requiresAuth: true }
         },
         {

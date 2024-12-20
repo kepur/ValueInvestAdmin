@@ -63,7 +63,7 @@ const handleLogout = async () => {
           </template>
           <el-menu-item index="/index/coin">代币列表</el-menu-item>
           <el-menu-item index="/index/cointype">代币类型</el-menu-item>
-          <el-menu-item index="/index/scosystem">代币链管理</el-menu-item>
+          <el-menu-item index="/index/ecosystem">代币链管理</el-menu-item>
           <el-menu-item index="/index/founder">创始团队信息</el-menu-item>
           <el-menu-item index="/index/overdraftinsitution">投资机构信息</el-menu-item>
         </el-sub-menu>

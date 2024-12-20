@@ -18,7 +18,6 @@
         </template>
       </el-table-column>
     </el-table>
-
     <!-- Dialog -->
     <el-dialog v-model="dialogVisible" title="User Management">
       <el-form :model="formData" ref="formRef" :rules="rules" label-width="120px">
@@ -112,7 +111,8 @@ const loadUsers = async () => {
     const response = await fetchUsers()
     console.log('API Response:', response.data)
     if (response.data) {
-      users.value = response.data
+      users.value = Array.isArray(response.data) ? response.data : response.data.users;
+      console.log(response.data)
     } else {
       ElMessage.error('Invalid data format received from API')
     }

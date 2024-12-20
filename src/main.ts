@@ -11,7 +11,7 @@ const app = createApp(App)
 //引入自定义插件对象
 import globalComponent from './components/RegistComponents'
 app.use(createPinia())
+app.use(ElementPlus)
 app.use(globalComponent)
 app.use(router)
-app.use(ElementPlus)
 app.mount('#app')
