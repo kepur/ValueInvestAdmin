@@ -121,8 +121,8 @@ onMounted(() => {
       <el-table-column prop="reputation_score" label="声誉分数"></el-table-column>
       <el-table-column label="操作">
         <template #default="{ row }">
-          <el-button type="text" @click="doeditFounder(row)">编辑</el-button>
-          <el-button type="text" @click="doDeleteFounder(row.id)">删除</el-button>
+          <el-button  @click="doeditFounder(row)">编辑</el-button>
+          <el-button type="danger" @click="doDeleteFounder(row.id)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>

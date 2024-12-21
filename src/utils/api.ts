@@ -4,6 +4,8 @@ import { storeToRefs } from 'pinia'
 import { baseURL_dev } from '@/config/baseConfig'
 import router from '@/router' 
 
+
+
 const api = axios.create({
   baseURL: baseURL_dev 
 })
@@ -33,5 +35,7 @@ api.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+
+
 
 export default api

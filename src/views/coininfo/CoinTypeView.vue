@@ -109,8 +109,8 @@ onMounted(() => {
       <el-table-column prop="description" label="描述"></el-table-column>
       <el-table-column label="操作">
         <template #default="{ row }">
-          <el-button type="text" @click="editCoinType(row)">编辑</el-button>
-          <el-button type="text" @click="doDeleteCoinType(row.id)">删除</el-button>
+          <el-button @click="editCoinType(row)">编辑</el-button>
+          <el-button type="danger" @click="doDeleteCoinType(row.id)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>

@@ -120,8 +120,8 @@ onMounted(() => {
       <el-table-column prop="created_at" label="创建时间"></el-table-column>
       <el-table-column label="操作">
         <template #default="{ row }">
-          <el-button type="text" @click="doeditEcosystem(row)">编辑</el-button>
-          <el-button type="text" @click="doDeleteEcosystem(row.id)">删除</el-button>
+          <el-button  @click="doeditEcosystem(row)">编辑</el-button>
+          <el-button type="danger" @click="doDeleteEcosystem(row.id)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
