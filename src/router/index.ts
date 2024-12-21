@@ -70,6 +70,12 @@ export const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
+          path: 'investmentinsitution',
+          name: 'investmentinsitution',
+          component: () => import('../views/coininfo/InvestmentInstitutionView.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
           path: 'investmentallocation',
           name: 'investmentallocation',
           component: () => import('../views/invest/InvestmentAllocation.vue'),
@@ -147,12 +153,12 @@ export const router = createRouter({
           component: () => import('../views/coininfo/FounderView.vue'),
           meta: { requiresAuth: true }
         },
-        {
-          path: 'investmentallocation',
-          name: 'investmentallocation',
-          component: () => import('../views/coininfo/InvestmentAllocationView.vue'),
-          meta: { requiresAuth: true }
-        },
+        // {
+        //   path: 'investmentallocation',
+        //   name: 'investmentallocation',
+        //   component: () => import('../views/coininfo/InvestmentAllocationView.vue'),
+        //   meta: { requiresAuth: true }
+        // },
         {
           path: 'investmentinstitution',
           name: 'investmentinstitution',
