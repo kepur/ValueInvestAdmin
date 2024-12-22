@@ -11,6 +11,8 @@ interface Founder {
   reputation_score: number
 }
 
+const EditDialogVisible = ref(false)
+
 const openDialog = () => {
   console.log('open dialog')
   dialogVisible.value = true
@@ -48,6 +50,8 @@ const loadFounders = async () => {
 
 // Function to reset the form data
 const resetForm = () => {
+  EditDialogVisible.value = false
+  dialogVisible.value = false
   formData.value = { id: null, name: '', team_name: '', reputation_score: 0 }
 }
 
@@ -55,6 +59,7 @@ const resetForm = () => {
 const doeditFounder = (founder: Founder) => {
   formData.value = { ...founder }
   dialogVisible.value = true
+  EditDialogVisible.value = true
 }
 // Function to delete an founder
 const doDeleteFounder = async (id: number) => {
@@ -81,6 +86,7 @@ const submitForm = async () => {
         reputation_score: formData.value.reputation_score
       })
     }
+    EditDialogVisible.value = false
     dialogVisible.value = false
     loadFounders()
   })
@@ -94,7 +100,7 @@ onMounted(() => {
   <div>
     <el-button type="primary" @click="openDialog">创建创始人</el-button>
     <el-dialog
-      title="创始人信息"
+      :title="EditDialogVisible? '编辑创始人信息':'添加创始人信息' "
       v-model="dialogVisible"
       width="30%"
       :before-close="resetForm"

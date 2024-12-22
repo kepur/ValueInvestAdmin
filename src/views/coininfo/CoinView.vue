@@ -4,6 +4,7 @@ import { ElMessage } from 'element-plus'
 import { createCoin, fetchAllCoins, updateCoin, deleteCoin } from '@/utils/coinapi'
 import { fetchAllCoinTypes,fetchAllEcosystems,fetchAllFounders,fetchAllInvestmentInstitutions } from '@/utils/coinapi';
 import { formatDateToTimezone } from '@/utils/utillibs'
+import { vi } from 'element-plus/es/locales.mjs';
 // Define the interface for coin data
 interface Coin {
   id: number | null
@@ -17,15 +18,21 @@ interface Coin {
   coin_types: string[]
 }
 
+
+
 const openDialog = () => {
   console.log('open dialog')
   dialogVisible.value = true
+  
 }
 
 // Reactive references for data and state
 
 const coins = ref<Coin[]>([])
+
 const dialogVisible = ref(false)
+const Editbtnvisable = ref(false)
+
 const formData = ref<Coin>({
   id: null,
   name: '',
@@ -75,16 +82,6 @@ const rules = {
   coin_types: [{ required: false, message: '请输入币种类型', trigger: 'blur' }]
 }
 
-
-// Function to load coins from the backend
-// const loadCoins = async () => {
-//   try {
-//     const response = await fetchAllCoins()
-//     coins.value = response.data
-//   } catch (error) {
-//     ElMessage.error('加载币种失败')
-//   }
-// }
 const loadCoins = async () => {
   try {
     const response = await fetchAllCoins();
@@ -114,13 +111,6 @@ const loadEcosystems = async () => {
   try {
     const response = await fetchAllEcosystems()
     ecosystems.value = response.data
-    // 如果有默认值，则设置默认选中项
-    if (formData.value.ecosystem_id) {
-      const foundEcosystem = ecosystems.value.find(item => item.id === formData.value.ecosystem_id);
-      if (foundEcosystem) {
-        formData.value.ecosystem_id = foundEcosystem.id;
-      }
-    }
   } catch (error) {
     ElMessage.error('加载生态系统失败')
   }
@@ -149,20 +139,35 @@ const loadInvestmentInstitutions = async () => {
 
 // Function to reset the form data
 const resetForm = () => {
+  dialogVisible.value = false
+  Editbtnvisable.value = false
   formData.value = { id: null, name: '', description: '', issuance_date: new Date(), is_active: true, ecosystem_id: 0, founders: [], investment_institutions: [], coin_types: [] }
 }
 
 // Function to edit a coin
 const doeditCoin = (coin: Coin) => {
   formData.value = { ...coin }
-
   dialogVisible.value = true
+  Editbtnvisable.value = true
     // 如果生态系统数据已经加载，校验并设置默认值
   if (ecosystems.value.length > 0) {
-  const foundEcosystem = ecosystems.value.find(item => item.id === coin.ecosystem_id);
-  if (foundEcosystem) {
-    formData.value.ecosystem_id = foundEcosystem.id;
-  }}
+    const foundEcosystem = ecosystems.value.find(
+      (item) => item.id === coin.ecosystem_id
+    );
+    if (foundEcosystem) {
+      formData.value.ecosystem_id = foundEcosystem.id;
+    } else {
+      formData.value.ecosystem_id = null; // 如果找不到对应的生态系统
+    }
+  } else {
+    // 如果生态系统数据尚未加载，延迟检查
+    loadEcosystems().then(() => {
+      const foundEcosystem = ecosystems.value.find(
+        (item) => item.id === coin.ecosystem_id
+      );
+      formData.value.ecosystem_id = foundEcosystem ? foundEcosystem.id : null;
+    });
+  }
 }
 // Function to delete a coin
 const doDeleteCoin = async (id: number) => {
@@ -204,18 +209,19 @@ const submitForm = async () => {
     ElMessage.success('币种创建成功')
   }
     dialogVisible.value = false
+    Editbtnvisable.value = false
     resetForm()
     loadCoins()
   })
 }
 
 // Load coins when the component is mounted
-onMounted(() => {
-  loadCoins()
-  loadCoinTypes()
-  loadEcosystems()
-  loadFounders()
-  loadInvestmentInstitutions()
+onMounted(async() => {
+  await loadEcosystems()
+  await loadCoins()
+  await loadCoinTypes()
+  await loadFounders()
+  await loadInvestmentInstitutions()
 })
 </script>
 <template>
@@ -254,7 +260,7 @@ onMounted(() => {
 
 
     <el-dialog
-      title="添加币种|编辑币种"
+      :title="Editbtnvisable ? '编辑币种':'添加币种'"
       v-model="dialogVisible"
       :before-close="resetForm"
     >

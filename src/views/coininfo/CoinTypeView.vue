@@ -10,6 +10,7 @@ interface CoinType {
   description: string
 }
 
+
 const openDialog = () => {
   console.log('open dialog')
   dialogVisible.value = true
@@ -18,12 +19,15 @@ const openDialog = () => {
 // Reactive references for data and state
 const coinTypes = ref<CoinType[]>([])
 const dialogVisible = ref(false)
+const EditDialogVisible = ref(false)
+
 const formData = ref<CoinType>({
   id: null,
   type_name: '',
   description: ''
 })
 const formRef = ref() // Reference to the form instance
+
 
 // Validation rules
 const rules = {
@@ -44,6 +48,8 @@ const loadCoinTypes = async () => {
 
 // Function to reset the form data
 const resetForm = () => {
+  EditDialogVisible.value = false
+  dialogVisible.value = false
   formData.value = { id: null, type_name: '', description: '' }
 }
 
@@ -67,6 +73,7 @@ const submitForm = async () => {
     ElMessage.success('币种类型创建成功')
   }
     dialogVisible.value = false
+    EditDialogVisible.value = false
     resetForm()
     loadCoinTypes()
   })
@@ -76,6 +83,7 @@ const submitForm = async () => {
 const editCoinType = (coinType: CoinType) => {
   formData.value = { ...coinType }
   dialogVisible.value = true
+  EditDialogVisible.value = true
 }
 
 // Function to delete a coin type
@@ -92,10 +100,6 @@ const doDeleteCoinType = async (id: number) => {
 // Load coin types when the component is mounted
 onMounted(() => {
   loadCoinTypes()
-  // setTimeout(() => {
-  //   dialogVisible.value = true
-  //   console.log('Dialog should be visible now')
-  // }, 2000)
 })
 
 
@@ -115,7 +119,7 @@ onMounted(() => {
       </el-table-column>
     </el-table>
     <el-dialog
-      title="创建币种类型"
+      :title="EditDialogVisible ? '编辑币种类型' : '创建币种类型'"
       v-model="dialogVisible"
       width="30%"
       :before-close="resetForm"

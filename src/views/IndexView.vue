@@ -42,16 +42,16 @@ const handleLogout = async () => {
       >
         <!-- Only Admin -->
         <!-- <el-sub-menu v-if="isAdmin" index="6"> -->
-        <el-sub-menu index="6">
+        <el-sub-menu index="1">
           <template #title>
             <el-icon><Setting /></el-icon>
             <span>系统管理</span>
           </template>
+          <el-menu-item index="/index/home">实时价格</el-menu-item>
           <el-menu-item index="/index/usermgm">用户管理</el-menu-item>
           <el-menu-item index="/index/role">权限组管理</el-menu-item>
           <el-menu-item index="/index/permission">权限管理</el-menu-item>
           <el-menu-item index="/index/auditlog">系统日志</el-menu-item>
-          <el-menu-item index="/index/realtrade">实时价格</el-menu-item>
           <el-menu-item index="/index/portfolioanalysis">投资收益概览</el-menu-item>
         </el-sub-menu>
 
@@ -86,11 +86,11 @@ const handleLogout = async () => {
             <el-icon><Aim /></el-icon>
             <span>投资管理</span>
           </template>
-          <el-menu-item index="/index/investmentcycle">投资周期管理</el-menu-item>
-          <el-menu-item index="/index/investmentstage">投资阶段管理</el-menu-item>
+          <el-menu-item index="/index/investcycle">投资周期管理</el-menu-item>
+          <el-menu-item index="/index/investmentstatge">投资阶段管理</el-menu-item>
           <el-menu-item index="/index/timesegment">时序分段管理</el-menu-item>
           <el-menu-item index="/index/strategy">策略管理</el-menu-item>
-          <el-menu-item index="/index/investmenetallocation">投资比例管理</el-menu-item>
+          <el-menu-item index="/index/investmentallocation">投资比例管理</el-menu-item>
           <el-menu-item index="/index/portfolioanalysis">投资组合管理</el-menu-item>
         </el-sub-menu>
 
@@ -103,7 +103,7 @@ const handleLogout = async () => {
           <el-menu-item index="/index/dailyprofit">日收益分析</el-menu-item>
           <el-menu-item index="/index/simulationtrade">模拟交易</el-menu-item>
           <el-menu-item index="/index/realtrade">实盘交易</el-menu-item>
-          <el-menu-item index="/index/realtrade">交易记录</el-menu-item>
+          <el-menu-item index="/index/transactionhistory">交易记录</el-menu-item>
         </el-sub-menu>
       </el-menu>
     </div>

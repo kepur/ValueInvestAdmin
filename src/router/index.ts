@@ -11,7 +11,6 @@ export const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'home',
       redirect: '/index'
     },
     {
@@ -20,6 +19,12 @@ export const router = createRouter({
       component: IndexView,
       meta: { requiresAuth: true },
       children: [
+        {
+          path: 'home',
+          name: 'home',
+          component: () => import('@/views/HomeView.vue'),
+          meta: { requiresAuth: true}
+        },
         {
           path: 'usermgm',
           name: 'usermgm',
@@ -70,15 +75,21 @@ export const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
-          path: 'investmentinsitution',
-          name: 'investmentinsitution',
-          component: () => import('../views/coininfo/InvestmentInstitutionView.vue'),
+          path: 'transactionhistory',
+          name: 'transactionhistory',
+          component: () => import('../views/tread/TransactionHistoryView.vue'),
           meta: { requiresAuth: true }
         },
         {
-          path: 'investmentallocation',
-          name: 'investmentallocation',
-          component: () => import('../views/invest/InvestmentAllocation.vue'),
+          path: 'simulationtrade',
+          name: 'simulationtrade',
+          component: () => import('../views/tread/SimulationTradeView.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
+          path: 'investmentinsitution',
+          name: 'investmentinsitution',
+          component: () => import('../views/coininfo/InvestmentInstitutionView.vue'),
           meta: { requiresAuth: true }
         },
         {
@@ -93,6 +104,13 @@ export const router = createRouter({
           component: () => import('../views/invest/InvestmentStage.vue'),
           meta: { requiresAuth: true }
         },
+        {
+          path: 'investmentallocation',
+          name: 'investmentallocation',
+          component: () => import('../views/invest/InvestmentAllocation.vue'),
+          meta: { requiresAuth: true }
+        },
+
         {
           path: 'strategy',
           name: 'strategy',
@@ -153,18 +171,7 @@ export const router = createRouter({
           component: () => import('../views/coininfo/FounderView.vue'),
           meta: { requiresAuth: true }
         },
-        // {
-        //   path: 'investmentallocation',
-        //   name: 'investmentallocation',
-        //   component: () => import('../views/coininfo/InvestmentAllocationView.vue'),
-        //   meta: { requiresAuth: true }
-        // },
-        {
-          path: 'investmentinstitution',
-          name: 'investmentinstitution',
-          component: () => import('../views/coininfo/InvestmentInstitutionView.vue'),
-          meta: { requiresAuth: true }
-        },
+
       ]
     },
     {

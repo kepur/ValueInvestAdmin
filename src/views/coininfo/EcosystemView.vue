@@ -18,6 +18,7 @@ const openDialog = () => {
 // Reactive references for data and state
 const ecosystems = ref<Ecosystem[]>([])
 const dialogVisible = ref(false)
+const EditDialogVisible = ref(false)
 const formData = ref<Ecosystem>({
   id: null,
   name: '',
@@ -44,11 +45,14 @@ const loadEcosystems = async () => {
 
 // Function to reset the form data
 const resetForm = () => {
+  EditDialogVisible.value = false
+  dialogVisible.value = false
   formData.value = { id: null, name: '', description: '' }
 }
 
 // Function to edit an ecosystem
 const doeditEcosystem = (ecosystem: Ecosystem) => {
+  EditDialogVisible.value = true
   formData.value = { ...ecosystem }
   dialogVisible.value = true
 }
@@ -70,6 +74,7 @@ const submitForm = async () => {
       })
     }
     dialogVisible.value = false
+    EditDialogVisible.value = false
     loadEcosystems()
   })
 }
@@ -95,7 +100,7 @@ onMounted(() => {
   <div>
     <el-button type="primary" @click="openDialog">创建生态系统</el-button>
     <el-dialog
-      title="生态系统"
+      :title="EditDialogVisible ? '编辑生态系统名称':'创建生态系统名称'"
       v-model="dialogVisible"
       width="30%"
       :before-close="resetForm"
