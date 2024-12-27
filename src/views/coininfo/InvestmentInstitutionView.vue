@@ -13,6 +13,12 @@ import {
   fetchAllCoins,
 } from '@/utils/coinapi'
 
+const searchCoin = ref(''); // 搜索关键字
+const currentPage = ref(1); // 当前页码
+const pageSize = ref(1); // 每页大小
+const totalItems = ref(0); // 总记录数
+
+
 interface Coin {
   id: number | null
   name: string
@@ -33,6 +39,17 @@ interface CoinInvestment {
   coin_name?: string
   institution_name?: string
 }
+// 处理搜索
+const handleSearch = () => {
+  currentPage.value = 1; // 搜索时重置到第一页
+  loadCoinInvestments();
+};
+
+// 处理分页切换
+const handlePageChange = (page: number) => {
+  currentPage.value = page;
+  loadCoinInvestments();
+};
 
 const coins = ref<Coin[]>([])
 const investmentInstitutions = ref<InvestmentInstitution[]>([])
@@ -74,12 +91,15 @@ const CoinInvestrules = {
 
 const loadCoins = async () => {
   try {
-    const response = await fetchAllCoins()
-    coins.value = response.data
+    const response = await fetchAllCoins();
+    coins.value = response.data.data; // 当前页的数据
+    totalItems.value = response.data.total; // 总记录数
+    currentPage.value = response.data.page; // 当前页码
+    pageSize.value = response.data.per_page; // 每页记录数
   } catch (error) {
-    ElMessage.error('加载币种失败')
+    ElMessage.error('加载币种失败');
   }
-}
+};
 
 const loadInvestmentInstitutions = async () => {
   try {
@@ -92,14 +112,18 @@ const loadInvestmentInstitutions = async () => {
 
 const loadCoinInvestments = async () => {
   try {
-    const response = await fetchAllCoinInvestment()
-    coinInvestments.value = response.data.map((investment: CoinInvestment) => ({
+    const response = await fetchAllCoinInvestment({
+      page: currentPage.value,
+      per_page: pageSize.value,
+      search: searchCoin.value,
+    })
+    totalItems.value = response.data.total;  // 总记录数
+    coinInvestments.value = response.data.data.map((investment: CoinInvestment) => ({
       ...investment,
-      coin_name: coins.value.find(c => c.id === investment.coin_id)?.name,
       institution_name: investmentInstitutions.value.find(i => i.id === investment.institution_id)?.name
     }))
   } catch (error) {
-    ElMessage.error('加载投资信息失败')
+    ElMessage.error('加载投资信息失败'+error)
   }
 }
 
@@ -230,7 +254,12 @@ onMounted(async () => {
     <div class="button-group">
       <el-button type="primary" @click="openInstitutionsDialog">添加投资机构</el-button>
       <el-button type="primary" @click="openCoinInvestDialog">机构投资添加</el-button>
-      
+      <el-input
+      v-model="searchCoin"
+      placeholder="输入名称"
+      style="width: 300px; margin-left: 20px;"
+      @input="handleSearch"
+    />
       <el-select 
         v-model="selectedInstitution" 
         placeholder="选择投资机构"
@@ -249,10 +278,12 @@ onMounted(async () => {
               <el-button 
                 type="primary" 
                 @click.stop="doeditInvestmentInstitution(institution)"
+                size="small"
               >
                 编辑
               </el-button>
               <el-button 
+                size="small"
                 type="danger" 
                 class="delete-btn"
                 @click.stop="doDeleteInvestmentInstitution(institution.id!)"
@@ -342,24 +373,33 @@ onMounted(async () => {
     <!-- 投资信息表格 -->
     <el-table :data="coinInvestments"  style="width: 100%; margin-top: 20px">
       <el-table-column prop="coin_name" label="币种" width="120"/>
-      <el-table-column prop="institution_name" label="投资机构" width="180"/>
-      <el-table-column prop="holding_amount" label="持有量" width="120">
+      <el-table-column prop="institution_name" label="投资机构" />
+      <el-table-column prop="holding_amount" label="持有量" >
         <template #default="{ row }">
           {{ row.holding_amount }}<span v-if="row.holding_amount"> 亿</span>
         </template>
       </el-table-column>
-      <el-table-column prop="holding_percentage" label="持有百分比" width="120">
+      <el-table-column prop="holding_percentage" label="持有百分比" >
         <template #default="{ row }">
           {{ row.holding_percentage }}<span v-if="row.holding_percentage">%</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="150">
+      <el-table-column label="操作" >
         <template #default="{ row }">
-          <el-button type="primary" size="small" @click="doeditCoinInvestment(row)">编辑</el-button>
-          <el-button type="danger" size="small"   class="delete-btn" @click="doDeleteCoinInvestment(row.id!)">删除</el-button>
+          <el-button type="primary" size="middle" @click="doeditCoinInvestment(row)">编辑</el-button>
+          <el-button type="danger" size="middle"   class="delete-btn" @click="doDeleteCoinInvestment(row.id!)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
+    <el-pagination
+      style="margin-top: 20px;"
+      background
+      layout="prev, pager, next"
+      :current-page="currentPage"
+      :page-size="pageSize"
+      :total="totalItems"
+      @current-change="handlePageChange"
+    />
   </div>
 </template>
 <style scoped>
@@ -413,18 +453,6 @@ onMounted(async () => {
   width: 100%;
 }
 
-:deep(.el-table) {
-  margin-top: 30px;
-  border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  width: 100%;
-}
-
-:deep(.el-table th) {
-  background-color: #f5f7fa;
-  color: #606266;
-  font-weight: 1000;
-}
 
 :deep(.el-button--text) {
   padding: 0 4px;

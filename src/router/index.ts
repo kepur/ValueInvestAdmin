@@ -26,6 +26,18 @@ export const router = createRouter({
           meta: { requiresAuth: true}
         },
         {
+          path: 'process',
+          name: 'process',
+          component: () => import('@/views/user/ProcessJob.vue'),
+          meta: { requiresAuth: true}
+        },
+        {
+          path: 'notifiction',
+          name: 'notifiction',
+          component: () => import('@/views/user/NotificationSettingView.vue'),
+          meta: { requiresAuth: true}
+        },
+        {
           path: 'usermgm',
           name: 'usermgm',
           component: () => import('@/views/user/UserMgm.vue'),
@@ -130,9 +142,9 @@ export const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
-          path: 'eventtype',
-          name: 'eventtype',
-          component: () => import('../views/events/EventTypeView.vue'),
+          path: 'analysis',
+          name: 'analysis',
+          component: () => import('../views/events/AnalysisScore.vue'),
           meta: { requiresAuth: true }
         },
         {

@@ -1,10 +1,15 @@
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { createCoin, fetchAllCoins, updateCoin, deleteCoin } from '@/utils/coinapi'
+import { createCoin, fetchCoins, updateCoin, deleteCoin } from '@/utils/coinapi'
 import { fetchAllCoinTypes,fetchAllEcosystems,fetchAllFounders,fetchAllInvestmentInstitutions } from '@/utils/coinapi';
 import { formatDateToTimezone } from '@/utils/utillibs'
-import { vi } from 'element-plus/es/locales.mjs';
+
+const searchCoin = ref(''); // 搜索关键字
+const currentPage = ref(1); // 当前页码
+const per_page= ref(3); // 每页记录数
+const totalItems = ref(0); // 总记录数
+
 // Define the interface for coin data
 interface Coin {
   id: number | null
@@ -82,20 +87,33 @@ const rules = {
   coin_types: [{ required: false, message: '请输入币种类型', trigger: 'blur' }]
 }
 
+// 加载币种数据，支持分页和搜索
 const loadCoins = async () => {
   try {
-    const response = await fetchAllCoins();
-    // 格式化每个币种的 issuance_date
-    coins.value = response.data.map((coin: any) => {
-      return {
-        ...coin,
-        issuance_date: formatDateToTimezone({ date: coin.issuance_date }),
-      };
+    const response = await fetchCoins({
+      page: currentPage.value,      // 当前页
+      per_page: per_page.value,     // 每页记录数
+      search: searchCoin.value,     // 搜索关键词
     });
+
+    coins.value = response.data.data;        // 当前页的数据
+    totalItems.value = response.data.total;  // 总记录数
+
   } catch (error) {
     ElMessage.error('加载币种失败');
   }
-}
+};
+// 处理搜索
+const handleSearch = () => {
+  currentPage.value = 1; // 搜索时重置到第一页
+  loadCoins();
+};
+
+// 处理分页切换
+const handlePageChange = (page: number) => {
+  currentPage.value = page;
+  loadCoins();
+};
 // Function to load coin types from the backend
 const loadCoinTypes = async () => {
   try {
@@ -227,11 +245,17 @@ onMounted(async() => {
 <template>
   <div>
     <el-button type="primary" @click="openDialog">添加币种</el-button>
+    <el-input
+      v-model="searchCoin"
+      placeholder="输入名称"
+      style="width: 300px; margin-left: 20px;"
+      @input="handleSearch"
+    />
     <el-table :data="coins" style="width: 100%">
-      <el-table-column prop="name" label="币种名称"></el-table-column>
+      <el-table-column prop="name" label="币种名称" width="100px"></el-table-column>
       <el-table-column prop="description" label="币种描述"></el-table-column>
       <el-table-column prop="issuance_date" label="发行日期"></el-table-column>
-      <el-table-column prop="is_active" label="是否活跃"></el-table-column>
+      <el-table-column prop="is_active" label="是否活跃" width="100px"></el-table-column>
       <el-table-column prop="ecosystem_name" label="生态系统">
       </el-table-column>
       <el-table-column prop="founders" label="创始人">
@@ -251,14 +275,22 @@ onMounted(async() => {
       </el-table-column>
       <el-table-column label="操作">
         <template #default="{ row }">
-          <el-button @click="doeditCoin(row)">编辑</el-button>
-          <el-button type="danger" @click="doDeleteCoin(row.id)">删除</el-button>
-  
+          <el-button size="small" @click="doeditCoin(row)">编辑</el-button>
+          <el-button type="danger" size="small" @click="doDeleteCoin(row.id)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
-
-
+    <el-pagination
+      style="margin-top: 20px;"
+      background
+      layout="prev, pager, next"
+      :current-page="currentPage"
+      :page-size="per_page"
+      :total="totalItems"
+      @current-change="handlePageChange"
+    />
+  </div>
+  
     <el-dialog
       :title="Editbtnvisable ? '编辑币种':'添加币种'"
       v-model="dialogVisible"
@@ -325,7 +357,6 @@ onMounted(async() => {
         <el-button type="primary" @click="submitForm">确定</el-button>
       </div>
     </el-dialog>
-  </div>
 </template>
 <style scoped>
 .dialog-footer {

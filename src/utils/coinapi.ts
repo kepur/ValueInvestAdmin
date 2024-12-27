@@ -101,10 +101,9 @@ export const DeleteInvestmentInstitution=(
 
 
 //****************************投资机构基本信息获取列表****************************
-
-export const fetchAllCoinInvestment=()=>{
-    return api.get('/coininvestments')
-}
+export const fetchAllCoinInvestment=(params: { page: number; per_page: number; search?: string }) => {
+        return api.get('/coininvestments', { params });
+    };
 //创建
 export const createCoinInvestment=(
     data:{
@@ -133,9 +132,14 @@ export const deleteCoinInvestment=(
 
 //****************************币种基本信息****************************
 
-export const fetchAllCoins=()=>{
-    return api.get('/coins')
-}
+// 获取币种列表，支持分页和搜索
+export const fetchAllCoins = () => {
+    return api.get('/coins_all');
+  };
+
+export const fetchCoins = (params: { page: number; per_page: number; search?: string }) => {
+    return api.get('/coins', { params });
+};
 //创建
 export const createCoin = (
     data: {

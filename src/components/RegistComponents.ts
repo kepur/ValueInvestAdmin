@@ -1,7 +1,9 @@
 import type { App, Component } from 'vue'
 import IconIndex from './icons/IconIndex.vue'
+import PaginationTable from './PaginationTable.vue'
 
-const allClobalComponents: Record<string, Component> = { IconIndex }
+
+const allClobalComponents: Record<string, Component> = { IconIndex,PaginationTable }
 
 export default {
   install(app: App) {

@@ -2,7 +2,7 @@
 </script>
 <template>
   <div>
-    <h1>投资配置</h1>
+    <h1>系统任务</h1>
   </div>
 </template>
 <style scoped></style>

@@ -52,7 +52,7 @@ const handleLogout = async () => {
           <el-menu-item index="/index/role">权限组管理</el-menu-item>
           <el-menu-item index="/index/permission">权限管理</el-menu-item>
           <el-menu-item index="/index/auditlog">系统日志</el-menu-item>
-          <el-menu-item index="/index/portfolioanalysis">投资收益概览</el-menu-item>
+          <el-menu-item index="/index/process">系统后台任务</el-menu-item>
         </el-sub-menu>
 
         <!-- Novels -->
@@ -75,7 +75,7 @@ const handleLogout = async () => {
             <span>大纪元</span>
           </template>
           <el-menu-item index="/index/eventcalendar">大事件</el-menu-item>
-          <el-menu-item index="/index/eventtype">事件类型</el-menu-item>
+          <el-menu-item index="/index/analysis">AI风险评估</el-menu-item>
           <el-menu-item index="/index/socialmetric">市场情绪热度管理</el-menu-item>
           <el-menu-item index="/index/recommendation">AI分析建议</el-menu-item>
         </el-sub-menu>
@@ -118,7 +118,7 @@ const handleLogout = async () => {
           active-text-color="#ffd04b"
           :router="true"
         >
-          <el-menu-item index="/index/loginhistory">
+          <el-menu-item index="/index/auditlog">
             <el-icon><Switch /></el-icon>
             登录历史
           </el-menu-item>
@@ -127,7 +127,7 @@ const handleLogout = async () => {
               <el-icon><UserFilled /></el-icon>
               Admin
             </template>
-            <el-menu-item index="/index/userprofile">用户信息</el-menu-item>
+            <el-menu-item index="/index/userprofile">通知设置</el-menu-item>
             <el-menu-item index="/index/changepassword">更改密码</el-menu-item>
             <el-menu-item @click="handleLogout">退出登录</el-menu-item>
           </el-sub-menu>
