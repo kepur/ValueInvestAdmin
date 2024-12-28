@@ -23,7 +23,8 @@ interface FormatDateToTimezoneParams {
 function formatDateToTimezone({
     date,
     timezoneString = 'Asia/Shanghai',
-    format = 'YYYY-MM-DD'
+    // format = 'YYYY-MM-DD'
+    format = 'YYYY-MM-DD HH:mm:ss' // 默认格式改为包含时分秒
 }: FormatDateToTimezoneParams): string {
     // 判断传入的日期类型
     let dayjsDate;

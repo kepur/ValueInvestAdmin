@@ -279,17 +279,12 @@ onMounted(async () => {
                 type="primary" 
                 @click.stop="doeditInvestmentInstitution(institution)"
                 size="small"
-              >
-                编辑
-              </el-button>
+              >编辑</el-button>
               <el-button 
                 size="small"
                 type="danger" 
                 class="delete-btn"
-                @click.stop="doDeleteInvestmentInstitution(institution.id!)"
-              >
-                删除
-              </el-button>
+                @click.stop="doDeleteInvestmentInstitution(institution.id!)"> 删除</el-button>
             </div>
           </div>
         </el-option>

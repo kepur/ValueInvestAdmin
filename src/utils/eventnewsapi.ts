@@ -16,7 +16,8 @@ export const createEvent=(
         event_date:Date,
         event_type_id:number| null,
         influence_score:number,
-        description:string
+        description:string,
+        coin_id:[number]
         }
 
 )=>{
@@ -35,7 +36,9 @@ export const updateEvent=(
         event_date:Date,
         event_type_id:number,
         influence_score:number,
-        description:string
+        description:string,
+        coin_id:[number]
+
     }
 )=>api.put(`/events/${id}`,data)
 
@@ -53,7 +56,7 @@ export const fetchEventTypes=()=>{
 //创建
 export const createEventType=(
     data:{
-        type_name:string
+        name:string
         description:string
     }
 )=>api.post('/event_types',data)
@@ -62,7 +65,7 @@ export const createEventType=(
 export const updateEventType=(
     id:number,
     data:{
-        type_name:string
+        name:string
         description:string
     }
 )=>api.put(`/event_types/${id}`,data)
