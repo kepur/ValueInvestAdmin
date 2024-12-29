@@ -10,6 +10,16 @@ const currentPage = ref(1); // 当前页码
 const pageSize = ref(10); // 每页大小
 const totalItems = ref(0); // 总记录数
 const coins = ref<Coin[]>([])
+const sortField = ref('event_date'); // 排序字段
+const sortOrder = ref('asc'); // 排序方式：asc（升序）或 desc（降序）
+
+const handleSortChange = ({ column, prop, order }: { column: any; prop: string; order: string }) => {
+  if (prop === 'event_date') {
+    sortField.value = prop;
+    sortOrder.value = order === 'ascending' ? 'asc' : 'desc';
+    loadEvents(); // 重新加载数据
+  }
+};
 
 interface Coin{
   id: number | null
@@ -96,18 +106,26 @@ const loadCoins = async () => {
 }
 
 // Function to load events from the backend
+
 const loadEvents = async () => {
   try {
     const response = await fetchEvents({
       page: currentPage.value,
       per_page: pageSize.value,
-      search: searchEvent.value
+      search: searchEvent.value,
+      sort_field: sortField.value, // 排序字段
+      sort_order: sortOrder.value // 排序方式
     });
     totalItems.value = response.data.total;
     events.value = response.data.data;
   } catch (error) {
     ElMessage.error('加载事件失败');
   }
+};
+
+const handleSearch = () => {
+  currentPage.value = 1; // 搜索时重置到第一页
+  loadEvents();
 };
 
 const handleSizeChange = (newSize: number) => {
@@ -258,7 +276,7 @@ onMounted(() => {
     <el-button type="primary" @click="loadEvents" style="margin-left: 15px;">刷新</el-button>
     <el-button type="primary" @click="openEventDialog">添加事件</el-button>
     <el-button type="primary" @click="openEventTypeDialog">添加事件类型</el-button>
-    <el-input v-model="searchEvent" placeholder="搜索事件" style="width: 200px; margin-left: 15px;"></el-input>
+    <el-input v-model="searchEvent" placeholder="搜索事件" style="width: 200px; margin-left: 15px;" @input="handleSearch"></el-input>
     <el-select v-model="selectedEventype" placeholder="选择事件类型" clearable  style="width: 400px; margin-left: 15px;">
       <el-option
         v-for="type in eventTypes"
@@ -279,8 +297,16 @@ onMounted(() => {
   </div>
         <el-table :data="events" border style="width: 100%">
           <el-table-column prop="event_name" label="事件名称" width="180"></el-table-column>
-          <el-table-column prop="event_date" label="事件日期" width="160">
+          <el-table-column
+            prop="event_date"
+            label="事件日期"
+            width="160"
+            sortable
+            :sort-orders="['ascending', 'descending']"
+            @sort-change="handleSortChange"
+          >
             <template #default="{ row }">
+              {{ formatDateToTimezone({ date: row.event_date }) }}
             </template>
           </el-table-column>
           <el-table-column prop="event_type_id" label="事件类型" width="150">

@@ -5,9 +5,15 @@ export const fetchAllEventNews = () => {
     return api.get('/all_event_news')
 }
 //
-export const fetchEvents=(params: { page: number; per_page: number; search?: string })=>{
-    return api.get('/events',{params})
-}
+export const fetchEvents = (params: {
+    page: number;
+    per_page: number;
+    search?: string;
+    sort_field?: string; // 排序字段
+    sort_order?: string; // 排序方式：asc（升序）或 desc（降序）
+  }) => {
+    return api.get('/events', { params });
+  };
 
 //创建
 export const createEvent=(

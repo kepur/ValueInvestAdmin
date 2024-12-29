@@ -92,10 +92,7 @@ const CoinInvestrules = {
 const loadCoins = async () => {
   try {
     const response = await fetchAllCoins();
-    coins.value = response.data.data; // 当前页的数据
-    totalItems.value = response.data.total; // 总记录数
-    currentPage.value = response.data.page; // 当前页码
-    pageSize.value = response.data.per_page; // 每页记录数
+    coins.value = response.data;
   } catch (error) {
     ElMessage.error('加载币种失败');
   }

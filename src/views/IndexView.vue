@@ -75,9 +75,9 @@ const handleLogout = async () => {
             <span>大纪元</span>
           </template>
           <el-menu-item index="/index/eventcalendar">大事件</el-menu-item>
-          <el-menu-item index="/index/analysis">AI风险评估</el-menu-item>
-          <el-menu-item index="/index/socialmetric">市场情绪热度管理</el-menu-item>
-          <el-menu-item index="/index/recommendation">AI分析建议</el-menu-item>
+          <el-menu-item index="/index/analysis">风险评估</el-menu-item>
+          <el-menu-item index="/index/socialmetric">情绪热度</el-menu-item>
+          <el-menu-item index="/index/recommendation">代币信息管理</el-menu-item>
         </el-sub-menu>
 
         <!-- Resource -->
