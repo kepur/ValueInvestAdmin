@@ -7,7 +7,7 @@ import { fetchAllCoins } from '@/utils/coinapi'
 
 const searchEvent = ref(''); // 搜索关键字
 const currentPage = ref(1); // 当前页码
-const pageSize = ref(2); // 每页大小
+const pageSize = ref(10); // 每页大小
 const totalItems = ref(0); // 总记录数
 const coins = ref<Coin[]>([])
 
@@ -23,7 +23,7 @@ interface Event {
   event_type_id: number |null
   description: string
   influence_score: number
-  coin_id: [number] | null // 修改为 [number] | null
+  coin_id: [number] | null, // 修改为 [number] | null
 }
 
 // Define the interface for event type data
@@ -99,16 +99,27 @@ const loadCoins = async () => {
 const loadEvents = async () => {
   try {
     const response = await fetchEvents({
-      page:currentPage.value,
-      per_page:pageSize.value,
-      search:searchEvent.value
-    })
-    totalItems.value = response.data.total
-    events.value = response.data.data
+      page: currentPage.value,
+      per_page: pageSize.value,
+      search: searchEvent.value
+    });
+    totalItems.value = response.data.total;
+    events.value = response.data.data;
   } catch (error) {
-    ElMessage.error('加载事件失败')
+    ElMessage.error('加载事件失败');
   }
-}
+};
+
+const handleSizeChange = (newSize: number) => {
+  pageSize.value = newSize;
+  loadEvents(); // 重新加载数据
+};
+
+const handleCurrentChange = (newPage: number) => {
+  currentPage.value = newPage;
+  loadEvents(); // 重新加载数据
+};
+
 
 // Function to load event types from the backend
 const loadEventTypes = async () => {
@@ -149,14 +160,12 @@ const resetEventTypeForm = () => {
 
 // Function to edit an event
 const doeditEvent = (event: Event) => {
-  console.log("date",event.event_date)
-  eventformData.value = {
-    ...event,
-    event_date: new Date(event.event_date), // 确保 event_date 是 Date 对象
-    coin_id: event.coin_id || [0] // 如果为 null，则设置为 [0]
-  };
   eventdialogVisible.value = true;
   EditDialogVisible.value = true;
+  eventformData.value = {
+    ...event,
+    coin_id: event.coin_id || [0] // 确保 coin_id 是数组，如果为 null 则设置为 [0]
+  };
 };
 // Function to delete an event
 const doDeleteEvent = async (id: number) => {
@@ -295,8 +304,8 @@ onMounted(() => {
           </el-table-column>
         </el-table>
         <el-pagination
-          @size-change="loadEvents"
-          @current-change="loadEvents"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
           :current-page="currentPage"
           :page-size="pageSize"
           :total="totalItems"
