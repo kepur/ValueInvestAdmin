@@ -199,29 +199,29 @@ export const router = createRouter({
   ]
 })
 
-// router.beforeEach((to, from, next) => {
-//   const authStore = useAuthStore()
-//   const { token, userRoles } = storeToRefs(authStore)
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore()
+  const { token, userRoles } = storeToRefs(authStore)
 
-//   authStore.loadStoredToken()
+  authStore.loadStoredToken()
 
-//   console.log('star check router')
+  console.log('star check router')
 
-//   if (to.meta.requiresAuth && !authStore.isAuthenticated()) {
+  if (to.meta.requiresAuth && !authStore.isAuthenticated()) {
 
-//     return next({ name: 'login' })
-//   }
+    return next({ name: 'login' })
+  }
 
-//   if (to.meta.requiresAdmin && !userRoles.value.includes('admin')) {
-//     return next({ name: 'home' }) 
-//   }
+  if (to.meta.requiresAdmin && !userRoles.value.includes('admin')) {
+    return next({ name: 'home' }) 
+  }
 
 
-//   if (authStore.isAuthenticated() && to.path === '/login') {
-//     return next({ name: 'home' })
-//   }
+  if (authStore.isAuthenticated() && to.path === '/login') {
+    return next({ name: 'home' })
+  }
 
-//   next()
-// })
+  next()
+})
 
 export default router

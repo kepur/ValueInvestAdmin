@@ -22,7 +22,7 @@
   import { ref, computed, defineProps, defineEmits } from 'vue';
   
   // 定义 Props
-  defineProps({
+  const props = defineProps({
     data: {
       type: Array,
       required: true,
