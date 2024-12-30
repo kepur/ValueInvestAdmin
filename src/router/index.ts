@@ -183,7 +183,12 @@ export const router = createRouter({
           component: () => import('../views/coininfo/FounderView.vue'),
           meta: { requiresAuth: true }
         },
-
+        {
+          path: 'assistant',
+          name: 'assistant',
+          component: () => import('../views/AiAssistant.vue'),
+          meta: { requiresAuth: true }
+        },
       ]
     },
     {

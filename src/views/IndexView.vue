@@ -1,6 +1,7 @@
 
 <script lang="ts" setup>
 import { useAuthStore } from '@/stores/auth'
+import { ref } from 'vue';
 import {
   Avatar,
   Setting,
@@ -27,6 +28,33 @@ const handleLogout = async () => {
     ElMessage.error('Logout failed')
   }
 }
+
+
+const notificationDialogVisible = ref(false);
+
+// 通知类型和通知方式
+const notificationTypes = ['交易通知', '事件新闻', '鲸鱼买入'];
+const selectedNotificationTypes = ref<string[]>([]);
+const selectedNotificationMethods = ref<string[]>(['邮件']);
+
+// 打开通知设置
+const openNotificationSettings = () => {
+  notificationDialogVisible.value = true;
+};
+
+// 关闭通知设置
+const closeNotificationSettings = () => {
+  notificationDialogVisible.value = false;
+};
+
+// 保存通知设置
+const saveNotificationSettings = () => {
+  ElMessage.success('通知设置已保存');
+  console.log('通知类型:', selectedNotificationTypes.value);
+  console.log('通知方式:', selectedNotificationMethods.value);
+  notificationDialogVisible.value = false;
+};
+
 </script>
 <template>
   <div class="index">
@@ -118,26 +146,55 @@ const handleLogout = async () => {
           active-text-color="#ffd04b"
           :router="true"
         >
-          <el-menu-item index="/index/auditlog">
+          <el-menu-item index="/index/assistant">
             <el-icon><Switch /></el-icon>
-            登录历史
+            AI小助手
           </el-menu-item>
           <el-sub-menu index="2">
             <template #title>
               <el-icon><UserFilled /></el-icon>
               Admin
             </template>
-            <el-menu-item index="/index/userprofile">通知设置</el-menu-item>
-            <el-menu-item index="/index/changepassword">更改密码</el-menu-item>
+            <el-menu-item @click="openNotificationSettings">通知设置</el-menu-item>
             <el-menu-item @click="handleLogout">退出登录</el-menu-item>
           </el-sub-menu>
         </el-menu>
+        
       </div>
       <div class="content">
         <RouterView></RouterView>
       </div>
+
     </div>
   </div>
+  <!-- 通知设置弹窗 -->
+  <el-dialog
+      title="通知设置"
+      v-model="notificationDialogVisible"
+      width="30%"
+      :before-close="closeNotificationSettings"
+    >
+      <el-form>
+        <!-- 通知类型选择 -->
+        <el-form-item label="通知类型">
+          <el-select v-model="selectedNotificationTypes" multiple placeholder="请选择通知类型">
+            <el-option v-for="type in notificationTypes" :key="type" :label="type" :value="type"></el-option>
+          </el-select>
+        </el-form-item>
+        <!-- 通知方式选择 -->
+        <el-form-item label="通知方式">
+          <el-checkbox-group v-model="selectedNotificationMethods">
+            <el-checkbox label="邮件"></el-checkbox>
+            <el-checkbox label="Telegram"></el-checkbox>
+            <el-checkbox label="短信"></el-checkbox>
+          </el-checkbox-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="closeNotificationSettings">取消</el-button>
+        <el-button type="primary" @click="saveNotificationSettings">确定</el-button>
+      </template>
+    </el-dialog>
 </template>
 
 

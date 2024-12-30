@@ -60,8 +60,8 @@
 
     </div>
     <div class="container-right">
-            <!-- WebSocket 日志信息框 -->
-            <div class="websocket-log-box">
+      <!-- WebSocket 日志信息框 -->
+      <div class="websocket-log-box">
         <h3>WebSocket 日志信息</h3>
         <div class="log-content">
           <p>这里是 WebSocket 的日志信息...</p>
