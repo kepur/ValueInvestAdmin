@@ -96,7 +96,7 @@ const handleBatchEvaluate = () => {
       :data="tableData"
       style="width: 100%"
       border
-      @selection-change="(selection) => (selectedTokens = selection)"
+      @selection-change="selectedTokens = $event"
     >
       <!-- 勾选框列 -->
       <el-table-column v-if="showSelection" type="selection" width="55" />
