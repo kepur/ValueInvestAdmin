@@ -15,8 +15,17 @@ import {
 
 const searchCoin = ref(''); // 搜索关键字
 const currentPage = ref(1); // 当前页码
-const pageSize = ref(1); // 每页大小
+const pageSize = ref(10); // 每页大小
 const totalItems = ref(0); // 总记录数
+const handleSizeChange = (newSize: number) => {
+  pageSize.value = newSize;
+  loadCoinInvestments(); // 重新加载数据
+};
+
+const handleCurrentChange = (newPage: number) => {
+  currentPage.value = newPage;
+  loadCoinInvestments(); // 重新加载数据
+};
 
 
 interface Coin {
@@ -383,7 +392,7 @@ onMounted(async () => {
         </template>
       </el-table-column>
     </el-table>
-    <el-pagination
+    <!-- <el-pagination
       style="margin-top: 20px;"
       background
       layout="prev, pager, next"
@@ -391,7 +400,15 @@ onMounted(async () => {
       :page-size="pageSize"
       :total="totalItems"
       @current-change="handlePageChange"
-    />
+    /> -->
+    <el-pagination
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+          :current-page="currentPage"
+          :page-size="pageSize"
+          :total="totalItems"
+          layout="total, sizes, prev, pager, next, jumper">
+        </el-pagination>
   </div>
 </template>
 <style scoped>
@@ -400,7 +417,10 @@ onMounted(async () => {
   background-color: #f0f2f5;
   width: 100%;
 }
-
+.el-pagination {
+  margin-top: 20px;
+  text-align: right;
+}
 .button-group {
   display: flex;
   align-items: center;
