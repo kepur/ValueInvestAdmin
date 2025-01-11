@@ -1,5 +1,93 @@
 <script setup lang="ts">
-// 这里可以放置你的逻辑代码
+import { onMounted, ref } from 'vue';
+import {createRecommendationSocket} from '@/utils/websocket';
+import { fetchCoinSearch,founder_search } from '@/utils/recommendationapi';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
+interface coin_search{
+  coin_search: string;
+}
+interface founder_search{
+  founder_search: string;
+}
+interface cointype_search{
+  coin_type_search: string;
+}
+
+
+const coinSearchKeyword = ref(''); // 绑定用户输入的关键字
+const messages = ref<Message[]>([]);
+const newMessage = ref('');
+
+let recommendation_socket: ReturnType<typeof createRecommendationSocket> | null = null;
+
+
+const scrollToBottom = () => {
+  const chatDialog = document.querySelector('.chat-messages') as HTMLElement;
+  chatDialog.scrollTop = chatDialog.scrollHeight;
+};
+
+const loadHistory = async () => {
+  setTimeout(() => {
+    const history: Message[] = [
+      { role: 'assistant', content: '```javascript\n我是您的系统助手!\n```' },
+    ];
+    messages.value.unshift(...history);
+    scrollToBottom();
+  }, 1000); // 模拟延迟加载
+};
+
+const handleChatResponse = (data: { messages: Message[] }) => {
+  if (data.messages) {
+    data.messages.forEach((msg) => {
+      messages.value.push(msg);
+    });
+    scrollToBottom();
+  }
+};
+
+const handleCoinSearch = async () => {
+  if (!coinSearchKeyword.value.trim()) {
+    console.warn('请输入关键字');
+    return;
+  }
+
+  try {
+    const coin_search = await fetchCoinSearch({ coin_search: coinSearchKeyword.value });
+    console.log('coin_search:', coin_search);
+    if (coin_search) {
+      messages.value.push({ role: 'assistant', content: `代币搜索结果: ${coin_search}` });
+      scrollToBottom();
+    }
+  } catch (error) {
+    console.error('查询失败:', error);
+    messages.value.push({ role: 'assistant', content: '查询失败，请稍后重试' });
+    scrollToBottom();
+  }
+};
+onMounted(() => {
+  recommendation_socket = createRecommendationSocket({
+    onConnect: () => {
+      console.log('Recommendation Socket connected');
+    },
+    onMessage: handleChatResponse,
+    onDisconnect: () => {
+      console.log('Recommendation Socket disconnected');
+    },
+    onError: (error) => {
+      console.error('Recommendation Socket error:', error);
+    },
+  });
+  if (recommendation_socket) {
+    recommendation_socket.on('chat_response', handleChatResponse);
+    loadHistory();
+  }
+});
+
+
 </script>
 
 <template>
@@ -23,12 +111,12 @@
         <el-button type="success" class="button">AI 自动添加</el-button>
       </div>
       <div class="function-row">
-        <span class="label">代币名称</span>
-        <el-input placeholder="输入关键字" class="input" />
-        <el-button type="primary" class="button">查询</el-button>
-        <el-button type="warning" class="button">AI 更新</el-button>
-        <el-button type="success" class="button">AI 自动添加</el-button>
-      </div>
+  <span class="label">代币名称</span>
+    <el-input v-model="coinSearchKeyword" placeholder="输入关键字" class="input" />
+    <el-button type="primary" class="button" @click="handleCoinSearch">查询</el-button>
+    <el-button type="warning" class="button" @click="handleCoinUpdate">AI 更新</el-button>
+    <el-button type="success" class="button" @click="handleCoinAdd">AI 自动添加</el-button>
+  </div>
       <div class="function-row">
         <span class="label">代币类型</span>
         <el-input placeholder="输入关键字" class="input" />
@@ -63,16 +151,8 @@
       <!-- WebSocket 日志信息框 -->
       <div class="websocket-log-box">
         <h3>WebSocket 日志信息</h3>
-        <div class="log-content">
-          <p>这里是 WebSocket 的日志信息...</p>
-          <p>这里是 WebSocket 的日志信息...</p>
-          <p>这里是 WebSocket 的日志信息...</p>
-          <p>这里是 WebSocket 的日志信息...</p>
-          <p>这里是 WebSocket 的日志信息...</p>
-          <p>这里是 WebSocket 的日志信息...</p>
-          <p>这里是 WebSocket 的日志信息...</p>
-          <p>这里是 WebSocket 的日志信息...</p>
-          <p>这里是 WebSocket 的日志信息...</p>
+        <div class="log-content" v-for="msg,index in messages" :key="index" :class="['message', msg.role]">
+          <p>{{ msg.content }}</p>
           <p>这里是 WebSocket 的日志信息...</p>
         </div>
       </div>

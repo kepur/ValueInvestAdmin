@@ -16,6 +16,7 @@
     "axios": "^1.7.7",
     "dayjs": "^1.11.13",
     "dayjs-plugin-utc": "^0.1.2",
+    "dotenv": "^16.4.7",
     "element-plus": "^2.8.6",
     "highlight.js": "^11.11.1",
     "markdown-it": "^14.1.0",

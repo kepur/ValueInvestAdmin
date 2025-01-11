@@ -414,10 +414,10 @@ onMounted(() => {
   max-height: 500px;
   overflow-y: auto;
 }
-/* .el-pagination {
+.el-pagination {
   margin-top: 20px;
   text-align: right;
-} */
+}
 .eventype-option {
   display: flex;
   justify-content: space-between;

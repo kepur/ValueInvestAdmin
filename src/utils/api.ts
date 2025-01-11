@@ -1,13 +1,13 @@
 import axios from 'axios'
 import { useAuthStore } from '../stores/auth'
 import { storeToRefs } from 'pinia'
-import { baseURL_dev } from '@/config/baseConfig'
+import { baseURL } from '@/config/baseConfig'
 import router from '@/router' 
 
 
 
 const api = axios.create({
-  baseURL: baseURL_dev 
+  baseURL: baseURL
 })
 
 api.interceptors.request.use((config) => {

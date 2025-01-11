@@ -1,3 +1,105 @@
+<script setup lang="ts">
+import MarkdownIt from 'markdown-it';
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { createChatSocket } from '@/utils/websocket';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+const messages = ref<Message[]>([]);
+const newMessage = ref('');
+const md = new MarkdownIt();
+let chat_socket: ReturnType<typeof createChatSocket> | null = null;
+
+// Markdown 渲染函数
+const renderMarkdown = (content: string) => md.render(content);
+
+// 自动滚动到最新消息
+const scrollToBottom = () => {
+  nextTick(() => {
+    const chatDialog = document.querySelector('.chat-messages') as HTMLElement;
+    if (chatDialog && chatDialog.scrollHeight > chatDialog.clientHeight) {
+      chatDialog.scrollTop = chatDialog.scrollHeight;
+    }
+  });
+};
+
+// 动态加载历史记录
+const loadHistory = async () => {
+  setTimeout(() => {
+    const history: Message[] = [
+      { role: 'assistant', content: '```javascript\n我是您的系统助手!\n```' },
+    ];
+    messages.value.unshift(...history);
+    scrollToBottom();
+  }, 1000); // 模拟延迟加载
+};
+
+// 发送消息
+const sendMessage = () => {
+  if (newMessage.value.trim()) {
+    const userMessage: Message = { role: 'user', content: newMessage.value };
+    messages.value.push(userMessage);
+
+    if (chat_socket) {
+      chat_socket.emit('chat_message', { messages: [userMessage] });
+    }
+
+    newMessage.value = '';
+    scrollToBottom();
+  }
+};
+
+// 监听服务器响应
+const handleChatResponse = (data: { messages: Message[] }) => {
+  if (data.messages) {
+    data.messages.forEach((msg) => {
+      messages.value.push(msg);
+    });
+    scrollToBottom();
+  }
+};
+
+// 表格搜索逻辑
+const searchQuery = ref('');
+const tableData = ref([
+  { id: 1, sender: 'User', content: 'Hello, I need help.', timestamp: '2023-10-01 10:00:00' },
+  { id: 2, sender: 'Assistant', content: 'Sure, what can I do for you?', timestamp: '2023-10-01 10:01:00' },
+]);
+
+const filteredTableData = computed(() => {
+  if (!searchQuery.value.trim()) return tableData.value;
+  return tableData.value.filter((item) =>
+    item.content.toLowerCase().includes(searchQuery.value.toLowerCase())
+  );
+});
+
+// 清除搜索
+const clearSearch = () => {
+  searchQuery.value = '';
+};
+
+onMounted(() => {
+  // 初始化 WebSocket
+  chat_socket = createChatSocket({
+    onConnect: () => console.log('Chat WebSocket connected'),
+    onDisconnect: () => console.log('Chat WebSocket disconnected'),
+    onMessage: handleChatResponse,
+    onError: (error) => console.error('Chat WebSocket error:', error),
+  });
+
+  loadHistory(); // 加载历史记录
+});
+
+onBeforeUnmount(() => {
+  // 清理 WebSocket 连接
+  chat_socket?.disconnect();
+  chat_socket = null;
+});
+</script>
+
 <template>
     <div class="container">
       <!-- 左侧聊天对话框 -->
@@ -47,84 +149,9 @@
       </div>
     </div>
   </template>
-  
-  <script setup lang="ts">
-  import MarkdownIt from 'markdown-it';
-  import { ref, computed, onMounted, nextTick } from 'vue';
-  import chat_socket from '@/utils/websocket';
-  
-  const messages = ref<{ role: string; content: string }[]>([]);
-  const newMessage = ref('');
-  const md = new MarkdownIt();
-  
-  // Markdown 渲染函数
-  const renderMarkdown = (content: string) => md.render(content);
-  
-  // 自动滚动到最新消息
-  const scrollToBottom = () => {
-    nextTick(() => {
-      const chatDialog = document.querySelector('.chat-messages') as HTMLElement;
-      if (chatDialog && chatDialog.scrollHeight > chatDialog.clientHeight) {
-        chatDialog.scrollTop = chatDialog.scrollHeight;
-      }
-    });
-  };
-  
-  // 动态加载历史记录
-  const loadHistory = async () => {
-    setTimeout(() => {
-      const history = [
-        { role: 'assistant', content: '```javascript\n我是您的系统助手!\n```' },
-      ];
-      messages.value.unshift(...history);
-      scrollToBottom();
-    }, 1000); // 模拟延迟加载
-  };
-  
-  // 发送消息
-  const sendMessage = () => {
-    if (newMessage.value.trim()) {
-      messages.value.push({ role: 'user', content: newMessage.value });
-      chat_socket.emit('chat_message', { messages: [{ role: 'user', content: newMessage.value }] });
-      newMessage.value = '';
-      scrollToBottom();
-    }
-  };
-  
-  // 监听服务器响应
-  chat_socket.on('chat_response', (data) => {
-    if (data.messages) {
-      data.messages.forEach((msg: { role: string; content: string }) => {
-        messages.value.push(msg);
-      });
-      scrollToBottom();
-    }
-  });
-  
-  // 表格搜索逻辑
-  const searchQuery = ref('');
-  const tableData = [
-    { id: 1, sender: 'User', content: 'Hello, I need help.', timestamp: '2023-10-01 10:00:00' },
-    { id: 2, sender: 'Assistant', content: 'Sure, what can I do for you?', timestamp: '2023-10-01 10:01:00' },
-  ];
-  
-  const filteredTableData = computed(() => {
-    if (!searchQuery.value.trim()) return tableData;
-    return tableData.filter((item) =>
-      item.content.toLowerCase().includes(searchQuery.value.toLowerCase())
-    );
-  });
-  
-  const clearSearch = () => {
-    searchQuery.value = '';
-  };
-  
-  onMounted(() => {
-    loadHistory(); // 加载历史记录
-  });
-  </script>
-  
-  
+
+
+
   <style scoped>
   .container {
     display: flex;
