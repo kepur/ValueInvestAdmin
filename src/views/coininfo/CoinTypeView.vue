@@ -117,7 +117,7 @@ const editCoinType = (coinType: CoinType) => {
 const doDeleteCoinType = async (id: number) => {
   try {
     await DeleteCoinType(id)
-    ElMessage.error('删除币种类型成功')
+    ElMessage.success('删除币种类型成功')
     loadCoinTypes()
   } catch (error) {
     ElMessage.error('删除币种类型失败')

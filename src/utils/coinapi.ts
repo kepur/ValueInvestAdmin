@@ -186,16 +186,12 @@ export const updateCoin = (
         description: string,
         issuance_date: Date,
         is_active: boolean,
-        ecosystem_id: number | null,
+        ecosystems: string[],
         founders: string[],
         investment_institutions: string[],
         coin_types: string[]
     }
 ) => {
-    // 如果ecosystem_id为0，则设置为null
-    if (data.ecosystem_id === 0) {
-        data.ecosystem_id = null;
-    }
     
     return api.put(`/coins/${id}`, data);
 }

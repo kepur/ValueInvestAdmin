@@ -172,8 +172,14 @@ const doeditCoin = (coin: Coin) => {
 }
 // Function to delete a coin
 const doDeleteCoin = async (id: number) => {
-  await deleteCoin(id)
-  loadCoins()
+  try {
+    await deleteCoin(id).then(() => {
+      ElMessage.success('删除生态系统成功')
+    })
+    loadCoins()
+  } catch (error) {
+    ElMessage.error('删除生态系统失败')
+  }
 }
 
 // Function to submit the form data
