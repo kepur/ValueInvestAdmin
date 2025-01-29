@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-import { chatSocketURL, RecommendationSocketURL } from '@/utils/baseURL';
+import { chatSocketURL, RecommendationSocketURL } from '@/config/baseConfig';
 /**
  * 创建 WebSocket 连接并绑定通用事件
  * @param url WebSocket 服务器的 URL

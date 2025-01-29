@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import {createRecommendationSocket} from '@/utils/websocket';
-import { fetchCoinSearch,founder_search } from '@/utils/recommendationapi';
+import { fetchCoinSearch,founder_search,coinmarket_top100 } from '@/utils/recommendationapi';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -48,6 +48,14 @@ const handleChatResponse = (data: { messages: Message[] }) => {
     scrollToBottom();
   }
 };
+const HandleProceeTop100=async()=>{
+  try {
+    const coin_search = await coinmarket_top100();
+    console.log('coin_search:', coin_search);
+  } catch (error) {
+    console.error('查询失败:', error);
+  }
+}
 
 const handleCoinSearch = async () => {
   if (!coinSearchKeyword.value.trim()) {
@@ -96,7 +104,7 @@ onMounted(() => {
       <h1>代币信息管理</h1>
       <!-- 批量添加按钮 -->
       <div class="batch-buttons">
-        <el-button type="primary">TOP100 主流代币批量添加</el-button>
+        <el-button type="primary" @click="HandleProceeTop100">TOP100 主流代币批量添加</el-button>
         <el-button type="primary">代币链批量添加</el-button>
         <el-button type="primary">代币类型批量添加</el-button>
         <el-button type="primary">创始团队批量添加</el-button>

@@ -7,7 +7,7 @@ import { formatDateToTimezone } from '@/utils/utillibs'
 
 const searchCoin = ref(''); // 搜索关键字
 const currentPage = ref(1); // 当前页码
-const per_page= ref(3); // 每页记录数
+const pageSize = ref(10); // 每页大小
 const totalItems = ref(0); // 总记录数
 
 // Define the interface for coin data
@@ -17,13 +17,11 @@ interface Coin {
   description: string
   issuance_date: Date
   is_active: boolean
-  ecosystem_id: number | null
+  ecosystems:string[]
   founders: string[]
   investment_institutions: string[]
   coin_types: string[]
 }
-
-
 
 const openDialog = () => {
   console.log('open dialog')
@@ -44,7 +42,7 @@ const formData = ref<Coin>({
   description: '',
   issuance_date: new Date(),
   is_active: true,
-  ecosystem_id: null ,
+  ecosystems:[] ,
   founders: [],
   investment_institutions: [],
   coin_types: []
@@ -81,7 +79,7 @@ const rules = {
   description: [{ required: false, message: '请输入币种描述', trigger: 'blur' }],
   issuance_date: [{ required: false, message: '请输入发行日期', trigger: 'blur' }],
   is_active: [{ required: false, message: '请输入是否活跃', trigger: 'blur' }],
-  ecosystem_id: [{ required: false, message: '请输入生态系统ID', trigger: 'blur' }],
+  ecosystems: [{ required: false, message: '请输入生态系统', trigger: 'blur' }],
   founders: [{ required: false, message: '请输入创始人', trigger: 'blur' }],
   investment_institutions: [{ required: false, message: '请输入投资机构', trigger: 'blur' }],
   coin_types: [{ required: false, message: '请输入币种类型', trigger: 'blur' }]
@@ -92,7 +90,7 @@ const loadCoins = async () => {
   try {
     const response = await fetchCoins({
       page: currentPage.value,      // 当前页
-      per_page: per_page.value,     // 每页记录数
+      pageSize: pageSize.value,     // 每页记录数
       search: searchCoin.value,     // 搜索关键词
     });
 
@@ -114,6 +112,11 @@ const handlePageChange = (page: number) => {
   currentPage.value = page;
   loadCoins();
 };
+const handleSizeChange = (newSize: number) => {
+  pageSize.value = newSize;
+  loadCoins(); // 重新加载数据
+};
+
 // Function to load coin types from the backend
 const loadCoinTypes = async () => {
   try {
@@ -154,12 +157,11 @@ const loadInvestmentInstitutions = async () => {
   }
 }
 
-
 // Function to reset the form data
 const resetForm = () => {
   dialogVisible.value = false
   Editbtnvisable.value = false
-  formData.value = { id: null, name: '', description: '', issuance_date: new Date(), is_active: true, ecosystem_id: 0, founders: [], investment_institutions: [], coin_types: [] }
+  formData.value = { id: null, name: '', description: '', issuance_date: new Date(), is_active: true, ecosystems: [], founders: [], investment_institutions: [], coin_types: [] }
 }
 
 // Function to edit a coin
@@ -167,25 +169,6 @@ const doeditCoin = (coin: Coin) => {
   formData.value = { ...coin }
   dialogVisible.value = true
   Editbtnvisable.value = true
-    // 如果生态系统数据已经加载，校验并设置默认值
-  if (ecosystems.value.length > 0) {
-    const foundEcosystem = ecosystems.value.find(
-      (item) => item.id === coin.ecosystem_id
-    );
-    if (foundEcosystem) {
-      formData.value.ecosystem_id = foundEcosystem.id;
-    } else {
-      formData.value.ecosystem_id = null; // 如果找不到对应的生态系统
-    }
-  } else {
-    // 如果生态系统数据尚未加载，延迟检查
-    loadEcosystems().then(() => {
-      const foundEcosystem = ecosystems.value.find(
-        (item) => item.id === coin.ecosystem_id
-      );
-      formData.value.ecosystem_id = foundEcosystem ? foundEcosystem.id : null;
-    });
-  }
 }
 // Function to delete a coin
 const doDeleteCoin = async (id: number) => {
@@ -206,7 +189,7 @@ const submitForm = async () => {
         description: formData.value.description,
         issuance_date: new Date(formatDateToTimezone({ date: formData.value.issuance_date })),
         is_active: formData.value.is_active,
-        ecosystem_id: formData.value.ecosystem_id === 0 ? null : formData.value.ecosystem_id, // 如果是0则设置为空
+        ecosystems: formData.value.ecosystems,
         founders: formData.value.founders,
         investment_institutions: formData.value.investment_institutions,
         coin_types: formData.value.coin_types
@@ -219,7 +202,7 @@ const submitForm = async () => {
         description: formData.value.description,
         issuance_date: new Date(formatDateToTimezone({ date: formData.value.issuance_date })),
         is_active: formData.value.is_active,
-        ecosystem_id: formData.value.ecosystem_id,
+        ecosystems: formData.value.ecosystems,
         founders: formData.value.founders,
         investment_institutions: formData.value.investment_institutions,
         coin_types: formData.value.coin_types
@@ -253,24 +236,45 @@ onMounted(async() => {
     />
     <el-table :data="coins" style="width: 100%">
       <el-table-column prop="name" label="币种名称" width="100px"></el-table-column>
-      <el-table-column prop="description" label="币种描述"></el-table-column>
-      <el-table-column prop="issuance_date" label="发行日期"></el-table-column>
-      <el-table-column prop="is_active" label="是否活跃" width="100px"></el-table-column>
-      <el-table-column prop="ecosystem_name" label="生态系统">
-      </el-table-column>
-      <el-table-column prop="founders" label="创始人">
+      <el-table-column prop="description" label="币种描述" width="100px">
         <template #default="{ row }">
-          <span v-for="founder in row.founders" :key="founder" class="perm-tag">{{ founder }}</span>
+          <div class="cell-content two-line-ellipsis">{{ row.description }}</div>
+        </template>
+      </el-table-column>
+      <el-table-column prop="issuance_date" label="发行日期" width="130px"></el-table-column>
+      <el-table-column prop="is_active" label="是否活跃" width="100px"></el-table-column>
+      <el-table-column prop="ecosystems" label="生态系统" >
+        <template #default="{ row }">
+          <div class="coin-types-container">
+            <span v-for="(ecosystem, index) in row.ecosystems" :key="index" class="perm-tag">
+              {{ ecosystem }}
+            </span>
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column prop="founders" label="创始人" width="100px">
+        <template #default="{ row }">
+          <div class="cell-content two-line-ellipsis">
+            <span v-for="founder in row.founders" :key="founder" class="perm-tag">{{ founder }}</span>
+          </div>
         </template>
       </el-table-column>
       <el-table-column prop="investment_institutions" label="投资机构">
         <template #default="{ row }">
-          <span v-for="investment_institution in row.investment_institutions" :key="investment_institution" class="perm-tag">{{ investment_institution }}</span>
+          <div class="investment-container">
+            <span v-for="(institution, index) in row.investment_institutions" :key="index" class="perm-tag">
+              {{ institution }}
+            </span>
+          </div>
         </template>
       </el-table-column>
-      <el-table-column prop="coin_types" label="币种类型">
+      <el-table-column prop="coin_types" label="代币类型">
         <template #default="{ row }">
-          <span v-for="coin_type in row.coin_types" :key="coin_type" class="perm-tag">{{ coin_type }}</span>
+          <div class="coin-types-container">
+            <span v-for="(type, index) in row.coin_types" :key="index" class="perm-tag">
+              {{ type }}
+            </span>
+          </div>
         </template>
       </el-table-column>
       <el-table-column label="操作">
@@ -281,93 +285,113 @@ onMounted(async() => {
       </el-table-column>
     </el-table>
     <el-pagination
-      style="margin-top: 20px;"
-      background
-      layout="prev, pager, next"
-      :current-page="currentPage"
-      :page-size="per_page"
-      :total="totalItems"
+      @size-change="handleSizeChange"
       @current-change="handlePageChange"
-    />
+      :current-page="currentPage"
+      :page-size="pageSize"
+      :total="totalItems"
+      layout="total, sizes, prev, pager, next, jumper">
+    </el-pagination>
   </div>
-  
-    <el-dialog
-      :title="Editbtnvisable ? '编辑币种':'添加币种'"
-      v-model="dialogVisible"
-      :before-close="resetForm"
-    >
-      <el-form :model="formData" :rules="rules" ref="formRef" label-width="100px">
-        <el-form-item label="币种名称" prop="name">
-          <el-input v-model="formData.name"></el-input>
-        </el-form-item>
-        <el-form-item label="币种描述" prop="description">
-          <el-input v-model="formData.description"></el-input>
-        </el-form-item>
-        <el-form-item label="发行日期" prop="issuance_date">
-          <el-date-picker v-model="formData.issuance_date" type="date" 
-          placeholder="选择日期" 
-          ></el-date-picker>
-        </el-form-item>
-        <el-form-item label="是否活跃" prop="is_active">
-          <el-switch v-model="formData.is_active"></el-switch>
-        </el-form-item>
-        <el-form-item label="生态系统ID" prop="ecosystem_id">
-          <el-select v-model="formData.ecosystem_id" placeholder="请选择生态系统">
-            <el-option
-              v-for="item in ecosystems"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id">
-            </el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="创始人" prop="founders">
-            <el-select v-model="formData.founders" multiple filterable placeholder="请选择创始人">
-              <el-option
-                v-for="item in founders"
-                :key="item.id"
-                :label="item.name"
-                :value="item.name">
-              </el-option>
-            </el-select>
-        </el-form-item>
-        <el-form-item label="投资机构" prop="investment_institutions">
-            <el-select v-model="formData.investment_institutions" multiple filterable placeholder="请选择投资机构">
-              <el-option
-                v-for="item in investmentInstitutions"
-                :key="item.id"
-                :label="item.name"
-                :value="item.name">
-              </el-option>
-            </el-select>
-        </el-form-item>
-        <el-form-item label="币种类型" prop="coin_types">
-            <el-select v-model="formData.coin_types" multiple filterable placeholder="请选择币种类型">
-              <el-option
-                v-for="item in coinTypes"
-                :key="item.id"
-                :label="item.type_name"
-                :value="item.type_name">
-              </el-option>
-            </el-select>
-        </el-form-item>
-      </el-form>
-      <div class="dialog-footer">
-        <el-button @click="dialogVisible = false; resetForm()">取消</el-button>
-        <el-button type="primary" @click="submitForm">确定</el-button>
-      </div>
-    </el-dialog>
+
+  <el-dialog
+    :title="Editbtnvisable ? '编辑币种':'添加币种'"
+    v-model="dialogVisible"
+    :before-close="resetForm"
+  >
+    <el-form :model="formData" :rules="rules" ref="formRef" label-width="100px">
+      <el-form-item label="币种名称" prop="name">
+        <el-input v-model="formData.name"></el-input>
+      </el-form-item>
+      <el-form-item label="币种描述" prop="description">
+        <el-input v-model="formData.description"></el-input>
+      </el-form-item>
+      <el-form-item label="发行日期" prop="issuance_date">
+        <el-date-picker v-model="formData.issuance_date" type="date" placeholder="选择日期"></el-date-picker>
+      </el-form-item>
+      <el-form-item label="是否活跃" prop="is_active">
+        <el-switch v-model="formData.is_active"></el-switch>
+      </el-form-item>
+      <el-form-item label="生态系统ID" prop="ecosystems">
+        <el-select v-model="formData.ecosystems" multiple filterable placeholder="请选择生态系统">
+          <el-option
+            v-for="item in ecosystems"
+            :key="item.id"
+            :label="item.name"
+            :value="item.name">
+          </el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="创始人" prop="founders">
+        <el-select v-model="formData.founders" multiple filterable placeholder="请选择创始人">
+          <el-option
+            v-for="item in founders"
+            :key="item.id"
+            :label="item.name"
+            :value="item.name">
+          </el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="投资机构" prop="investment_institutions">
+        <el-select v-model="formData.investment_institutions" multiple filterable placeholder="请选择投资机构">
+          <el-option
+            v-for="item in investmentInstitutions"
+            :key="item.id"
+            :label="item.name"
+            :value="item.name">
+          </el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="币种类型" prop="coin_types">
+        <el-select v-model="formData.coin_types" multiple filterable placeholder="请选择币种类型">
+          <el-option
+            v-for="item in coinTypes"
+            :key="item.id"
+            :label="item.type_name"
+            :value="item.type_name">
+          </el-option>
+        </el-select>
+      </el-form-item>
+    </el-form>
+    <div class="dialog-footer">
+      <el-button @click="dialogVisible = false; resetForm()">取消</el-button>
+      <el-button type="primary" @click="submitForm">确定</el-button>
+    </div>
+  </el-dialog>
 </template>
 <style scoped>
-.dialog-footer {
-  text-align: center;
-  margin-top: 10px;
+.investment-container,
+.coin-types-container {
+  display: flex;
+  flex-wrap: wrap; /* 允许换行 */
+  gap: 4px; /* 设置标签之间的间距 */
+  max-height: 4em; /* 限制总高度为两行 */
+  line-height: 1.5em; /* 行高 */
+  overflow: hidden; /* 超出部分隐藏 */
 }
+
+.investment-container .perm-tag {
+  flex: 0 0 calc(33.33% - 4px); /* 每行显示 3 个，减去间距 */
+  box-sizing: border-box;
+  text-align: center;
+  line-height: 1.5em; /* 行高 */
+  max-height: 4em; /* 限制总高度为两行 */
+  overflow: hidden; /* 超出部分隐藏 */
+}
+
+.coin-types-container .perm-tag {
+  flex: 0 0 calc(50% - 4px); /* 每行显示 2 个，减去间距 */
+  box-sizing: border-box;
+  text-align: center;
+}
+
 .perm-tag {
   display: inline-block;
   background-color: #f0f0f0;
   padding: 2px 6px;
-  margin: 2px;
   border-radius: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap; /* 单行显示，超出部分省略 */
 }
 </style>

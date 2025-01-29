@@ -17,6 +17,7 @@ const searchCoin = ref(''); // 搜索关键字
 const currentPage = ref(1); // 当前页码
 const pageSize = ref(10); // 每页大小
 const totalItems = ref(0); // 总记录数
+
 const handleSizeChange = (newSize: number) => {
   pageSize.value = newSize;
   loadCoinInvestments(); // 重新加载数据
@@ -54,11 +55,6 @@ const handleSearch = () => {
   loadCoinInvestments();
 };
 
-// 处理分页切换
-const handlePageChange = (page: number) => {
-  currentPage.value = page;
-  loadCoinInvestments();
-};
 
 const coins = ref<Coin[]>([])
 const investmentInstitutions = ref<InvestmentInstitution[]>([])
@@ -120,7 +116,7 @@ const loadCoinInvestments = async () => {
   try {
     const response = await fetchAllCoinInvestment({
       page: currentPage.value,
-      per_page: pageSize.value,
+      pageSize: pageSize.value,
       search: searchCoin.value,
     })
     totalItems.value = response.data.total;  // 总记录数
@@ -392,15 +388,6 @@ onMounted(async () => {
         </template>
       </el-table-column>
     </el-table>
-    <!-- <el-pagination
-      style="margin-top: 20px;"
-      background
-      layout="prev, pager, next"
-      :current-page="currentPage"
-      :page-size="pageSize"
-      :total="totalItems"
-      @current-change="handlePageChange"
-    /> -->
     <el-pagination
           @size-change="handleSizeChange"
           @current-change="handleCurrentChange"
@@ -408,7 +395,7 @@ onMounted(async () => {
           :page-size="pageSize"
           :total="totalItems"
           layout="total, sizes, prev, pager, next, jumper">
-        </el-pagination>
+    </el-pagination>
   </div>
 </template>
 <style scoped>
@@ -431,7 +418,6 @@ onMounted(async () => {
 .institution-select {
   width: 410px;
 }
-
 .institution-option {
   display: flex;
   justify-content: space-between;

@@ -2,8 +2,15 @@ import type { dayjs } from "element-plus";
 import api from "./api";
 
 //****************************币种类型****************************
+export const fetchCoinsTypes = (params:{
+    page:number,
+    pageSize:number,
+    search?:string
+})=>{
+    return api.get('/cointypes',{params})
+}
 export const fetchAllCoinTypes =()=>{
-    return api.get('/cointypes')
+    return api.get('/cointypes_all')
 }
 //创建
 export const createCoinType=(
@@ -26,8 +33,11 @@ export const DeleteCoinType=(
 )=>api.delete(`/cointypes/${id}`)
 
 //****************************创始人获取列表****************************
+export const fetchFounders=(params:{page:number,pageSize:number,search?:string})=>{
+    return api.get('/founders',{params})
+}
 export const fetchAllFounders=()=>{
-    return api.get('/founders')
+    return api.get('/founders_all')
 }
 //创建
 export const createFounder=(
@@ -52,8 +62,11 @@ export const deleteFounder=(
 )=>api.delete(`/founders/${id}`)
 
 //****************************生态系统获取列表****************************
+export const fetchEcosystems=(params:{page:number,pageSize:number,search?:string})=>{
+    return api.get('/ecosystems',{params})
+}
 export const fetchAllEcosystems=()=>{
-    return api.get('/ecosystems')
+    return api.get('/ecosystems_all')
 }
 //创建
 export const createEcosystem=(
@@ -76,8 +89,11 @@ export const deleteEcosystem=(
 )=>api.delete(`/ecosystems/${id}`)
 
 //****************************投资机构获取列表****************************
+export const fetchInvestmentInstitutions=(params:{page:number,pageSize:number,search?:string})=>{
+    return api.get('/investmentinstitutions',{params})
+}
 export const fetchAllInvestmentInstitutions=()=>{
-    return api.get('/investmentinstitutions')
+    return api.get('/investmentinstitutions_all')
 }
 //创建
 export const createInvestmentInstitution=(
@@ -101,9 +117,10 @@ export const DeleteInvestmentInstitution=(
 
 
 //****************************投资机构基本信息获取列表****************************
-export const fetchAllCoinInvestment=(params: { page: number; per_page: number; search?: string }) => {
+export const fetchAllCoinInvestment=(params: { page: number; pageSize: number; search?: string }) => {
         return api.get('/coininvestments', { params });
     };
+
 //创建
 export const createCoinInvestment=(
     data:{
@@ -137,7 +154,7 @@ export const fetchAllCoins = () => {
     return api.get('/coins_all');
   };
 
-export const fetchCoins = (params: { page: number; per_page: number; search?: string }) => {
+export const fetchCoins = (params: { page: number; pageSize: number; search?: string }) => {
     return api.get('/coins', { params });
 };
 //创建
@@ -147,16 +164,16 @@ export const createCoin = (
         description: string,
         issuance_date: Date,
         is_active: boolean,
-        ecosystem_id: number | null,
+        ecosystems: string[],
         founders: string[],
         investment_institutions: string[],
         coin_types: string[]
     }
 ) => {
-    // 如果ecosystem_id为0，则设置为null
-    if (data.ecosystem_id === 0) {
-        data.ecosystem_id = null;
-    }
+    // // 如果ecosystem_id为0，则设置为null
+    // if (data.ecosystem_id === 0) {
+    //     data.ecosystem_id = null;
+    // }
     
     return api.post('/coins', data);
 }

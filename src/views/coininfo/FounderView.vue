@@ -1,9 +1,15 @@
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { createFounder, fetchAllFounders, updateFounder,deleteFounder } from '@/utils/coinapi';
+import { createFounder, fetchFounders, updateFounder,deleteFounder } from '@/utils/coinapi';
 
 // Define the interface for founder data
+
+const searchFounder = ref(''); // 搜索关键字
+const currentPage = ref(1); // 当前页码
+const pageSize = ref(10); // 每页大小
+const totalItems = ref(0); // 总记录数
+
 interface Founder {
   id: number | null
   name: string
@@ -37,16 +43,39 @@ const rules = {
   refutation_score: [{ required: false, message: '请输入创始人声誉分数', trigger: 'blur' }]
 }
 
-
 // Function to load founders from the backend
 const loadFounders = async () => {
   try {
-    const response = await fetchAllFounders()
-    founders.value = response.data
+    const response = await fetchFounders({
+      page: currentPage.value,
+      pageSize: pageSize.value,
+      search: searchFounder.value
+    })
+    founders.value = response.data.data
+    totalItems.value = response.data.total;
   } catch (error) {
     ElMessage.error('加载创始人失败')
   }
 }
+
+// 处理分页切换
+const handlePageChange = (page: number) => {
+  currentPage.value = page;
+  loadFounders();
+};
+
+const handleSizeChange = (newSize: number) => {
+  pageSize.value = newSize;
+  loadFounders(); // 重新加载数据
+};
+
+// 处理搜索
+const handleSearch = () => {
+  currentPage.value = 1; // 搜索时重置到第一页
+  loadFounders();
+};
+
+
 
 // Function to reset the form data
 const resetForm = () => {
@@ -99,6 +128,12 @@ onMounted(() => {
 <template>
   <div>
     <el-button type="primary" @click="openDialog">创建创始人</el-button>
+    <el-input
+      v-model="searchFounder"
+      placeholder="输入名称"
+      style="width: 300px; margin-left: 20px;"
+      @input="handleSearch"
+    />
     <el-dialog
       :title="EditDialogVisible? '编辑创始人信息':'添加创始人信息' "
       v-model="dialogVisible"
@@ -132,6 +167,14 @@ onMounted(() => {
         </template>
       </el-table-column>
     </el-table>
+    <el-pagination
+      @size-change="handleSizeChange"
+      @current-change="handlePageChange"
+      :current-page="currentPage"
+      :page-size="pageSize"
+      :total="totalItems"
+      layout="total, sizes, prev, pager, next, jumper">
+    </el-pagination>
   </div>
 </template>
 <style scoped>

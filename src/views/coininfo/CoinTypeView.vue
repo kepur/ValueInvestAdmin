@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { fetchAllCoinTypes, createCoinType, updateCoinType, DeleteCoinType } from '@/utils/coinapi'
+import { fetchCoinsTypes, createCoinType, updateCoinType, DeleteCoinType } from '@/utils/coinapi'
 
 // Define the interface for coin type data
 interface CoinType {
@@ -10,16 +10,21 @@ interface CoinType {
   description: string
 }
 
+// Reactive references for data and state
+const coinTypes = ref<CoinType[]>([])
+const dialogVisible = ref(false)
+const EditDialogVisible = ref(false)
+const searchCoinType = ref('')
+const currentPage = ref(1)
+const pageSize = ref(10); // 每页大小
+const totalItems=ref(0)
+
 
 const openDialog = () => {
   console.log('open dialog')
   dialogVisible.value = true
 }
 
-// Reactive references for data and state
-const coinTypes = ref<CoinType[]>([])
-const dialogVisible = ref(false)
-const EditDialogVisible = ref(false)
 
 const formData = ref<CoinType>({
   id: null,
@@ -39,8 +44,13 @@ const rules = {
 // Function to load coin types from the backend
 const loadCoinTypes = async () => {
   try {
-    const response = await fetchAllCoinTypes()
-    coinTypes.value = response.data
+    const response = await fetchCoinsTypes({
+      page: currentPage.value,
+      pageSize: pageSize.value,
+      search: searchCoinType.value
+    })
+    coinTypes.value = response.data.data
+    totalItems.value = response.data.total;
   } catch (error) {
     ElMessage.error('加载币种类型失败')
   }
@@ -52,6 +62,23 @@ const resetForm = () => {
   dialogVisible.value = false
   formData.value = { id: null, type_name: '', description: '' }
 }
+
+//处理搜索
+const handleSearch = () => {
+  currentPage.value = 1; // 搜索时重置到第一页
+  loadCoinTypes();
+}
+// 
+const handleSizeChange = (newSize: number) => {
+  pageSize.value = newSize;
+  loadCoinTypes(); // 重新加载数据
+};
+const handleCurrentChange = (newPage: number) => {
+  currentPage.value = newPage;
+  loadCoinTypes(); // 重新加载数据
+};
+
+
 
 // Function to submit the form data
 const submitForm = async () => {
@@ -107,6 +134,12 @@ onMounted(() => {
 <template>
   <div>
     <el-button type="primary" @click="openDialog">创建币种类型</el-button>
+    <el-input
+      v-model="searchCoinType"
+      placeholder="输入名称"
+      style="width: 300px; margin-left: 20px;"
+      @input="handleSearch"
+    />
     <el-table :data="coinTypes" style="width: 100%">
       <el-table-column prop="id" label="ID" width="100"></el-table-column>
       <el-table-column prop="type_name" label="名称"></el-table-column>
@@ -118,6 +151,14 @@ onMounted(() => {
         </template>
       </el-table-column>
     </el-table>
+    <el-pagination
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+          :current-page="currentPage"
+          :page-size="pageSize"
+          :total="totalItems"
+          layout="total, sizes, prev, pager, next, jumper">
+    </el-pagination>
     <el-dialog
       :title="EditDialogVisible ? '编辑币种类型' : '创建币种类型'"
       v-model="dialogVisible"
@@ -138,8 +179,8 @@ onMounted(() => {
         <el-button type="primary" @click="submitForm">确定</el-button>
       </div>
     </el-dialog>
-
   </div>
+
 </template>
 <style scoped>
   .dialog-footer {
