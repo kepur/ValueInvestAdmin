@@ -26,6 +26,23 @@ export const updateWallet = (data: {
     return api.post('/wallet/update', data)
 }
 
+// 执行买入/卖出交易
+export const executeTrade = (data: {
+    coin_id: number
+    action: 'buy' | 'sell'
+    amount: number
+    trade_type: string
+}) => {
+    return api.post('/trades', data)
+}
+
+// 获取用户当前持仓
+export const fetchUserAssets = (params?: {
+    trade_type?: string
+}) => {
+    return api.get('/user_assets', { params })
+}
+
 // 获取交易历史
 export const fetchTransactionHistory = (params?: {
     page?: number
