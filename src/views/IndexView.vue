@@ -1,7 +1,8 @@
 
 <script lang="ts" setup>
 import { useAuthStore } from '@/stores/auth'
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
+import { useRoute } from 'vue-router'
 import {
   Avatar,
   Setting,
@@ -19,6 +20,13 @@ const authStore = useAuthStore()
 const { userRoles } = authStore
 
 const isAdmin = computed(() => userRoles.includes('admin'))
+
+const route = useRoute()
+const contentRef = ref<HTMLElement | null>(null)
+
+watch(() => route.path, () => {
+  contentRef.value?.scrollTo({ top: 0, behavior: 'smooth' })
+})
 
 const handleLogout = async () => {
   try {
@@ -57,17 +65,20 @@ const saveNotificationSettings = () => {
 
 </script>
 <template>
-  <div class="index">
-    <div class="left">
-      <h2>投资管理</h2>
-      <el-menu
-        active-text-color="#ffd04b"
-        background-color="#545c64"
-        class="el-menu-vertical-demo"
-        default-active="2"
-        text-color="#fff"
-        :router="true"
-      >
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>投资管理</h2>
+      </div>
+      <div class="sidebar-menu">
+        <el-menu
+          active-text-color="#ffd04b"
+          background-color="#545c64"
+          class="el-menu-vertical-demo"
+          default-active="2"
+          text-color="#fff"
+          :router="true"
+        >
         <!-- Only Admin -->
         <!-- <el-sub-menu v-if="isAdmin" index="6"> -->
         <el-sub-menu index="1">
@@ -137,10 +148,11 @@ const saveNotificationSettings = () => {
           <el-menu-item index="/index/realtrade">实盘交易</el-menu-item>
           <el-menu-item index="/index/transactionhistory">交易记录</el-menu-item>
         </el-sub-menu>
-      </el-menu>
-    </div>
-    <div class="right">
-      <div class="top">
+        </el-menu>
+      </div>
+    </aside>
+    <div class="main">
+      <header class="topbar">
         <el-menu
           :ellipsis="false"
           class="el-menu-demo"
@@ -163,12 +175,10 @@ const saveNotificationSettings = () => {
             <el-menu-item @click="handleLogout">退出登录</el-menu-item>
           </el-sub-menu>
         </el-menu>
-        
-      </div>
-      <div class="content">
+      </header>
+      <main class="content" ref="contentRef">
         <RouterView></RouterView>
-      </div>
-
+      </main>
     </div>
   </div>
   <!-- 通知设置弹窗 -->
@@ -203,42 +213,110 @@ const saveNotificationSettings = () => {
 
 
 <style scoped lang="scss">
-.index {
+$sidebar-width: 220px;
+$header-height: 60px;
+$sidebar-bg: #545c64;
+$topbar-bg: #545c64;
+
+.layout {
   width: 100vw;
   height: 100vh;
   display: flex;
-  .left {
-    .el-menu {
-      border-right: none;
-    }
-    ::v-deep .el-sub-menu__title__span {
-      text-align: left;
-    }
-    width: 200px;
-    background-color: #7b8a9c;
-    color: white;
+  overflow: hidden;
+}
+
+/* ---- 侧栏 ---- */
+.sidebar {
+  width: $sidebar-width;
+  min-width: $sidebar-width;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: $sidebar-bg;
+  color: #fff;
+
+  .sidebar-header {
+    height: $header-height;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
     h2 {
       font-size: 18px;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      text-align: center;
-      height: 60px;
-      line-height: 60px;
+      letter-spacing: 2px;
     }
   }
-  .right {
+
+  .sidebar-menu {
     flex: 1;
-    display: flex;
-    flex-direction: column;
-    .top {
-      height: 60px;
-      background-color: #666b70;
-      display: flex;
-      justify-content: flex-end;
-      border-bottom-width: none;
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    /* 自定义滚动条 */
+    &::-webkit-scrollbar {
+      width: 4px;
     }
-    .content {
-      flex: 1;
-      padding: 5px;
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 2px;
+    }
+    &::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.35);
+    }
+
+    .el-menu {
+      border-right: none;
+    }
+  }
+
+  :deep(.el-sub-menu__title span) {
+    text-align: left;
+  }
+}
+
+/* ---- 主区域 ---- */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100vh;
+
+  .topbar {
+    height: $header-height;
+    min-height: $header-height;
+    background-color: $topbar-bg;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 12px;
+    background-color: #f5f7fa;
+
+    /* 自定义滚动条 */
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.12);
+      border-radius: 3px;
+    }
+    &::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.2);
     }
   }
 }
