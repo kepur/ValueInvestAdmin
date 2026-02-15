@@ -213,11 +213,6 @@ const saveNotificationSettings = () => {
 
 
 <style scoped lang="scss">
-$sidebar-width: 220px;
-$header-height: 60px;
-$sidebar-bg: #545c64;
-$topbar-bg: #545c64;
-
 .layout {
   width: 100vw;
   height: 100vh;
@@ -235,6 +230,11 @@ $topbar-bg: #545c64;
   background-color: $sidebar-bg;
   color: #fff;
 
+  @include respond-sm {
+    width: $sidebar-collapsed-width;
+    min-width: $sidebar-collapsed-width;
+  }
+
   .sidebar-header {
     height: $header-height;
     display: flex;
@@ -246,6 +246,10 @@ $topbar-bg: #545c64;
       font-size: 18px;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       letter-spacing: 2px;
+
+      @include respond-sm {
+        font-size: 0;
+      }
     }
   }
 
@@ -253,21 +257,7 @@ $topbar-bg: #545c64;
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-
-    /* 自定义滚动条 */
-    &::-webkit-scrollbar {
-      width: 4px;
-    }
-    &::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    &::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 2px;
-    }
-    &::-webkit-scrollbar-thumb:hover {
-      background: rgba(255, 255, 255, 0.35);
-    }
+    @include thin-scrollbar(rgba(255, 255, 255, 0.2), 4px);
 
     .el-menu {
       border-right: none;
@@ -301,23 +291,9 @@ $topbar-bg: #545c64;
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 12px;
-    background-color: #f5f7fa;
-
-    /* 自定义滚动条 */
-    &::-webkit-scrollbar {
-      width: 6px;
-    }
-    &::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    &::-webkit-scrollbar-thumb {
-      background: rgba(0, 0, 0, 0.12);
-      border-radius: 3px;
-    }
-    &::-webkit-scrollbar-thumb:hover {
-      background: rgba(0, 0, 0, 0.2);
-    }
+    padding: $spacing-md;
+    background-color: $content-bg;
+    @include thin-scrollbar;
   }
 }
 </style>

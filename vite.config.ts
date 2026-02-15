@@ -4,20 +4,12 @@ import path from 'node:path'
 
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import { customPort } from './src/config/baseConfig'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  define: {
-    'process.env': {
-      BASE_URL_DEV: process.env.BASE_URL_DEV,
-      BASE_URL_PRO: process.env.BASE_URL_PRO,
-      CUSTOM_PORT: process.env.CUSTOM_PORT,
-    }
-  },
   server: {
-    port: customPort, 
-    open: true 
+    port: 28888,
+    open: false // Docker 中不需要自动打开浏览器
   },
   plugins: [
     vue(),
@@ -26,6 +18,13 @@ export default defineConfig({
       symbolId: 'icon-[dir]-[name]'
     })
   ],
+  css: {
+    preprocessorOptions: {
+      scss: {
+        additionalData: `@use "@/styles/variables" as *;\n`
+      }
+    }
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
