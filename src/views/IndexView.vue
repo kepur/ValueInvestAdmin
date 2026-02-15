@@ -121,6 +121,7 @@ const saveNotificationSettings = () => {
           <el-menu-item index="/index/investmentstatge">投资阶段管理</el-menu-item>
           <el-menu-item index="/index/timesegment">时序分段管理</el-menu-item>
           <el-menu-item index="/index/strategy">策略管理</el-menu-item>
+          <el-menu-item index="/index/strategytemplate">策略模板</el-menu-item>
           <el-menu-item index="/index/investmentallocation">投资比例管理</el-menu-item>
           <el-menu-item index="/index/portfolioanalysis">投资组合管理</el-menu-item>
         </el-sub-menu>

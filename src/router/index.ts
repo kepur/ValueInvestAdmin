@@ -130,6 +130,12 @@ export const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
+          path: 'strategytemplate',
+          name: 'strategytemplate',
+          component: () => import('../views/invest/StrategyTemplateView.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
           path: 'timesegment',
           name: 'timesegment',
           component: () => import('../views/invest/TimeSegmentView.vue'),
