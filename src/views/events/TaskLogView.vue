@@ -5,6 +5,7 @@ import {
     fetchTaskLogs,
     triggerNewsCollection,
     triggerSentimentCalc,
+    triggerCoinInfoFetch,
     connectTaskLogWS,
     type TaskLogMessage,
 } from '@/utils/tasklogapi'
@@ -82,8 +83,9 @@ const connectWS = () => {
 }
 
 // ── 手动触发任务 ──
-const handleTrigger = async (type: 'news' | 'sentiment') => {
-    const name = type === 'news' ? '新闻采集' : '情绪计算'
+const handleTrigger = async (type: 'news' | 'sentiment' | 'coininfo') => {
+    const nameMap: Record<string, string> = { news: '新闻采集', sentiment: '情绪计算', coininfo: '代币信息抓取' }
+    const name = nameMap[type] || type
     try {
         await ElMessageBox.confirm(`确定要手动触发「${name}」任务吗？`, '触发任务', {
             confirmButtonText: '确定',
@@ -94,9 +96,11 @@ const handleTrigger = async (type: 'news' | 'sentiment') => {
 
     triggering.value = type
     try {
-        const res = type === 'news'
-            ? await triggerNewsCollection()
-            : await triggerSentimentCalc()
+        let res
+        if (type === 'news') res = await triggerNewsCollection()
+        else if (type === 'sentiment') res = await triggerSentimentCalc()
+        else res = await triggerCoinInfoFetch()
+
         const data = res.data
         if (data.task_id) {
             selectedTaskId.value = data.task_id
@@ -163,6 +167,9 @@ onBeforeUnmount(() => {
                     </el-button>
                     <el-button type="warning" @click="handleTrigger('sentiment')" :loading="triggering === 'sentiment'">
                         触发情绪计算
+                    </el-button>
+                    <el-button type="success" @click="handleTrigger('coininfo')" :loading="triggering === 'coininfo'">
+                        触发代币抓取
                     </el-button>
                     <el-button @click="loadTasks">刷新列表</el-button>
                 </div>

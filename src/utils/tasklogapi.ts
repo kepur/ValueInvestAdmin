@@ -21,6 +21,13 @@ export const triggerNewsCollection = () => cronApi.post('tasks/collect_news')
 /** 手动触发情绪计算 */
 export const triggerSentimentCalc = () => cronApi.post('tasks/calculate_sentiment')
 
+/** 手动触发代币信息 AI 抓取 */
+export const triggerCoinInfoFetch = (params?: {
+    coin_symbols?: string[]
+    provider?: string
+    max_retries?: number
+}) => cronApi.post('tasks/fetch_coin_info', params || {})
+
 // ── WebSocket 连接 ──
 
 export interface TaskLogMessage {
