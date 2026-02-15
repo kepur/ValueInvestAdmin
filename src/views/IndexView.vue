@@ -81,6 +81,7 @@ const saveNotificationSettings = () => {
           <el-menu-item index="/index/permission">权限管理</el-menu-item>
           <el-menu-item index="/index/auditlog">系统日志</el-menu-item>
           <el-menu-item index="/index/process">系统后台任务</el-menu-item>
+          <el-menu-item index="/index/notification">通知设置</el-menu-item>
         </el-sub-menu>
 
         <!-- Novels -->
@@ -105,6 +106,7 @@ const saveNotificationSettings = () => {
           <el-menu-item index="/index/eventcalendar">大事件</el-menu-item>
           <el-menu-item index="/index/analysis">风险评估</el-menu-item>
           <el-menu-item index="/index/socialmetric">情绪热度</el-menu-item>
+          <el-menu-item index="/index/hotspot">热点管理</el-menu-item>
           <el-menu-item index="/index/recommendation">代币信息管理</el-menu-item>
         </el-sub-menu>
 

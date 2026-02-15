@@ -23,19 +23,19 @@ export const router = createRouter({
           path: 'home',
           name: 'home',
           component: () => import('@/views/HomeView.vue'),
-          meta: { requiresAuth: true}
+          meta: { requiresAuth: true }
         },
         {
           path: 'process',
           name: 'process',
           component: () => import('@/views/user/ProcessJob.vue'),
-          meta: { requiresAuth: true}
+          meta: { requiresAuth: true }
         },
         {
           path: 'notifiction',
           name: 'notifiction',
           component: () => import('@/views/user/NotificationSettingView.vue'),
-          meta: { requiresAuth: true}
+          meta: { requiresAuth: true }
         },
         {
           path: 'usermgm',
@@ -160,6 +160,12 @@ export const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
+          path: 'hotspot',
+          name: 'hotspot',
+          component: () => import('../views/events/HotspotManageView.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
           path: 'coin',
           name: 'coin',
           component: () => import('../views/coininfo/CoinView.vue'),
@@ -212,8 +218,8 @@ router.beforeEach((to, from, next) => {
     return next({ name: 'login' })
   }
 
-  if (to.meta.requiresAdmin && !userRoles.value.includes('admin')) {
-    return next({ name: 'home' }) 
+  if (to.meta.requiresAdmin && !userRoles.value.some(role => role.toLowerCase() === 'admin')) {
+    return next({ name: 'home' })
   }
 
 
