@@ -52,6 +52,34 @@ export const fetchTransactionHistory = (params?: {
     return api.get('/transaction_history', { params })
 }
 
+//****************************委托单（限价单）****************************
+// 获取委托单列表
+export const fetchLimitOrders = (params?: {
+    page?: number
+    pageSize?: number
+    trade_type?: string
+    status?: string
+    coin_id?: number
+}) => {
+    return api.get('/limit_orders', { params })
+}
+
+// 创建委托单
+export const createLimitOrder = (data: {
+    coin_id: number
+    order_type: 'buy' | 'sell'
+    quantity: number
+    limit_price: number
+    trade_type: string
+}) => {
+    return api.post('/limit_orders', data)
+}
+
+// 撤销委托单
+export const cancelLimitOrder = (orderId: number) => {
+    return api.delete(`/limit_orders/${orderId}`)
+}
+
 //****************************社交指标****************************
 // 获取社交指标列表
 export const fetchSocialMetrics = (params?: {

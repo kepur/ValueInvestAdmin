@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { ref, onMounted, computed } from 'vue'
-import { ElMessage } from 'element-plus'
-import { fetchWalletBalance, updateWallet, executeTrade, fetchTradeRecords, fetchUserAssets } from '@/utils/tradapi'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { fetchWalletBalance, updateWallet, executeTrade, fetchTradeRecords, fetchUserAssets, fetchLimitOrders, createLimitOrder, cancelLimitOrder } from '@/utils/tradapi'
 import { fetchRealTimePrice } from '@/utils/priceapi'
 import { fetchAllCoins } from '@/utils/coinapi'
 
@@ -17,14 +17,24 @@ const walletAmount = ref(100)
 const marketPrices = ref<any[]>([])
 const coins = ref<any[]>([])
 
+// 交易模式: market(市价) / limit(限价)
+const tradeMode = ref<'market' | 'limit'>('market')
+
 // 交易表单
 const selectedCoinId = ref<number | null>(null)
 const tradeAmount = ref(0)
+const limitPrice = ref(0)
 const trading = ref(false)
 
 // 持仓
 const userAssets = ref<any[]>([])
 const totalAssetValue = ref(0)
+
+// 委托单
+const limitOrders = ref<any[]>([])
+const orderPage = ref(1)
+const orderPageSize = ref(10)
+const orderTotal = ref(0)
 
 // 交易记录
 const tradeRecords = ref<any[]>([])
@@ -35,7 +45,6 @@ const totalItems = ref(0)
 // 当前选中币种的价格信息
 const selectedCoinPrice = computed(() => {
   if (!selectedCoinId.value) return 0
-  // 先从实时价格查找
   const coin = coins.value.find((c: any) => c.id === selectedCoinId.value)
   if (!coin) return 0
   const priceItem = marketPrices.value.find(
@@ -45,6 +54,9 @@ const selectedCoinPrice = computed(() => {
 })
 
 const totalCost = computed(() => {
+  if (tradeMode.value === 'limit') {
+    return tradeAmount.value * limitPrice.value
+  }
   return tradeAmount.value * selectedCoinPrice.value
 })
 
@@ -89,6 +101,21 @@ const loadAssets = async () => {
   }
 }
 
+// 加载委托单
+const loadOrders = async () => {
+  try {
+    const res = await fetchLimitOrders({
+      trade_type: TRADE_TYPE,
+      page: orderPage.value,
+      pageSize: orderPageSize.value,
+    })
+    limitOrders.value = res.data.data || []
+    orderTotal.value = res.data.total || 0
+  } catch (e) {
+    console.error('加载委托单失败', e)
+  }
+}
+
 // 加载交易记录
 const loadRecords = async () => {
   try {
@@ -109,6 +136,7 @@ const refreshAll = () => {
   loadWallet()
   loadAssets()
   loadRecords()
+  loadOrders()
 }
 
 // 充值/提现弹窗
@@ -137,7 +165,7 @@ const submitWallet = async () => {
   }
 }
 
-// 交易执行
+// 市价交易
 const handleTrade = async (action: 'buy' | 'sell') => {
   if (!selectedCoinId.value) {
     ElMessage.warning('请选择币种')
@@ -170,6 +198,66 @@ const handleTrade = async (action: 'buy' | 'sell') => {
   }
 }
 
+// 限价委托
+const handleLimitOrder = async (orderType: 'buy' | 'sell') => {
+  if (!selectedCoinId.value) {
+    ElMessage.warning('请选择币种')
+    return
+  }
+  if (tradeAmount.value <= 0) {
+    ElMessage.warning('委托数量必须大于0')
+    return
+  }
+  if (limitPrice.value <= 0) {
+    ElMessage.warning('委托价格必须大于0')
+    return
+  }
+
+  trading.value = true
+  try {
+    const res = await createLimitOrder({
+      coin_id: selectedCoinId.value,
+      order_type: orderType,
+      quantity: tradeAmount.value,
+      limit_price: limitPrice.value,
+      trade_type: TRADE_TYPE,
+    })
+    ElMessage.success(res.data.message || '委托创建成功')
+    tradeAmount.value = 0
+    limitPrice.value = 0
+    refreshAll()
+  } catch (e: any) {
+    ElMessage.error(e.response?.data?.error || '委托失败')
+  } finally {
+    trading.value = false
+  }
+}
+
+// 撤销委托单
+const handleCancelOrder = async (orderId: number) => {
+  try {
+    await ElMessageBox.confirm('确定撤销此委托单？', '撤单确认', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+    await cancelLimitOrder(orderId)
+    ElMessage.success('委托单已撤销')
+    refreshAll()
+  } catch (e: any) {
+    if (e !== 'cancel') {
+      ElMessage.error(e.response?.data?.error || '撤单失败')
+    }
+  }
+}
+
+// 选择币种时自动填充限价为当前市价
+const onCoinChange = () => {
+  if (selectedCoinPrice.value > 0) {
+    limitPrice.value = selectedCoinPrice.value
+  }
+}
+
 const handlePageChange = (page: number) => {
   currentPage.value = page
   loadRecords()
@@ -177,6 +265,10 @@ const handlePageChange = (page: number) => {
 const handleSizeChange = (size: number) => {
   pageSize.value = size
   loadRecords()
+}
+const handleOrderPageChange = (page: number) => {
+  orderPage.value = page
+  loadOrders()
 }
 
 // 格式化价格
@@ -191,6 +283,7 @@ onMounted(async () => {
   loadWallet()
   loadAssets()
   loadRecords()
+  loadOrders()
 })
 </script>
 
@@ -225,10 +318,18 @@ onMounted(async () => {
 
     <!-- 交易表单 -->
     <el-card class="section-card">
-      <template #header><span>模拟交易</span></template>
+      <template #header>
+        <div class="card-header">
+          <span>模拟交易</span>
+          <el-radio-group v-model="tradeMode" size="small">
+            <el-radio-button value="market">市价交易</el-radio-button>
+            <el-radio-button value="limit">限价委托</el-radio-button>
+          </el-radio-group>
+        </div>
+      </template>
       <el-form label-width="100px" class="trade-form">
         <el-form-item label="选择币种">
-          <el-select v-model="selectedCoinId" filterable placeholder="请选择币种" style="width: 250px;">
+          <el-select v-model="selectedCoinId" filterable placeholder="请选择币种" style="width: 250px;" @change="onCoinChange">
             <el-option
               v-for="coin in coins"
               :key="coin.id"
@@ -237,10 +338,16 @@ onMounted(async () => {
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="当前价格">
+        <el-form-item label="当前市价">
           <span style="font-size: 18px; font-weight: bold; color: #409eff;">
             {{ selectedCoinPrice > 0 ? formatPrice(selectedCoinPrice) : '请选择币种' }}
           </span>
+        </el-form-item>
+        <el-form-item v-if="tradeMode === 'limit'" label="委托价格">
+          <el-input-number v-model="limitPrice" :min="0" :precision="6" :step="0.01" style="width: 200px;" />
+          <el-button link type="primary" style="margin-left: 8px;" @click="limitPrice = selectedCoinPrice" :disabled="selectedCoinPrice <= 0">
+            使用市价
+          </el-button>
         </el-form-item>
         <el-form-item label="交易数量">
           <el-input-number v-model="tradeAmount" :min="0" :precision="6" :step="0.1" style="width: 200px;" />
@@ -251,14 +358,82 @@ onMounted(async () => {
           </span>
         </el-form-item>
         <el-form-item>
-          <el-button type="success" @click="handleTrade('buy')" :loading="trading" :disabled="!selectedCoinId">
-            买入
-          </el-button>
-          <el-button type="danger" @click="handleTrade('sell')" :loading="trading" :disabled="!selectedCoinId">
-            卖出
-          </el-button>
+          <template v-if="tradeMode === 'market'">
+            <el-button type="success" @click="handleTrade('buy')" :loading="trading" :disabled="!selectedCoinId">
+              买入
+            </el-button>
+            <el-button type="danger" @click="handleTrade('sell')" :loading="trading" :disabled="!selectedCoinId">
+              卖出
+            </el-button>
+          </template>
+          <template v-else>
+            <el-button type="success" @click="handleLimitOrder('buy')" :loading="trading" :disabled="!selectedCoinId">
+              委托买入
+            </el-button>
+            <el-button type="danger" @click="handleLimitOrder('sell')" :loading="trading" :disabled="!selectedCoinId">
+              委托卖出
+            </el-button>
+          </template>
         </el-form-item>
       </el-form>
+    </el-card>
+
+    <!-- 委托单 -->
+    <el-card class="section-card">
+      <template #header><span>委托单</span></template>
+      <el-table :data="limitOrders" style="width: 100%" border stripe empty-text="暂无委托单">
+        <el-table-column prop="coin_symbol" label="币种" width="100" />
+        <el-table-column label="方向" width="80">
+          <template #default="{ row }">
+            <el-tag :type="row.order_type === 'buy' ? 'success' : 'danger'" size="small">
+              {{ row.order_type === 'buy' ? '买入' : '卖出' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="委托数量" width="120">
+          <template #default="{ row }">{{ row.quantity.toFixed(6) }}</template>
+        </el-table-column>
+        <el-table-column label="委托价格" width="150">
+          <template #default="{ row }">{{ formatPrice(row.limit_price) }}</template>
+        </el-table-column>
+        <el-table-column label="委托总额" width="130">
+          <template #default="{ row }">${{ row.total_value }}</template>
+        </el-table-column>
+        <el-table-column label="状态" width="100">
+          <template #default="{ row }">
+            <el-tag
+              :type="row.status === 'pending' ? 'warning' : row.status === 'filled' ? 'success' : 'info'"
+              size="small"
+            >
+              {{ row.status === 'pending' ? '待成交' : row.status === 'filled' ? '已成交' : '已撤销' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="created_at" label="创建时间" />
+        <el-table-column label="操作" width="100">
+          <template #default="{ row }">
+            <el-button
+              v-if="row.status === 'pending'"
+              type="danger"
+              size="small"
+              link
+              @click="handleCancelOrder(row.id)"
+            >
+              撤单
+            </el-button>
+            <span v-else style="color: #909399;">-</span>
+          </template>
+        </el-table-column>
+      </el-table>
+      <el-pagination
+        v-if="orderTotal > orderPageSize"
+        @current-change="handleOrderPageChange"
+        :current-page="orderPage"
+        :page-size="orderPageSize"
+        :total="orderTotal"
+        layout="total, prev, pager, next"
+        style="margin-top: 16px;"
+      />
     </el-card>
 
     <!-- 当前持仓 -->
