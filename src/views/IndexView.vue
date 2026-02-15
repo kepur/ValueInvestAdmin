@@ -107,6 +107,7 @@ const saveNotificationSettings = () => {
           <el-menu-item index="/index/analysis">风险评估</el-menu-item>
           <el-menu-item index="/index/socialmetric">情绪热度</el-menu-item>
           <el-menu-item index="/index/hotspot">热点管理</el-menu-item>
+          <el-menu-item index="/index/tasklog">任务日志</el-menu-item>
           <el-menu-item index="/index/recommendation">代币信息管理</el-menu-item>
         </el-sub-menu>
 

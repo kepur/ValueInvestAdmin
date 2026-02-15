@@ -166,6 +166,12 @@ export const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
+          path: 'tasklog',
+          name: 'tasklog',
+          component: () => import('../views/events/TaskLogView.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
           path: 'coin',
           name: 'coin',
           component: () => import('../views/coininfo/CoinView.vue'),
