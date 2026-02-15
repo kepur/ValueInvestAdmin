@@ -1,230 +1,360 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import {
+    fetchTaskStatus,
+    triggerNewsCollection,
+    triggerSentimentCalc,
+    connectTaskLogWS,
+    type TaskLogMessage,
+} from '@/utils/tasklogapi'
+import { fetchHotspotSentiment } from '@/utils/hotspotapi'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
-// 假数据
-const fakeData = [
-  {
-    event_id: 1,
-    event_name: '特朗普上任',
-    platform: 'Twitter',
-    mentions: 1200,
-    sentiment_type: true,
-    sentiment_intensity: 75,
-    timestamp: '2023-10-01 12:00:00'
-  },
-  {
-    event_id: 2,
-    event_name: '特朗普上任',
-    platform: 'Reddit',
-    mentions: 800,
-    sentiment_type: false,
-    sentiment_intensity: 60,
-    timestamp: '2023-10-01 12:30:00'
-  },
-  {
-    event_id: 3,
-    event_name: '特朗普上任',
-    platform: 'Facebook',
-    mentions: 500,
-    sentiment_type: true,
-    sentiment_intensity: 80,
-    timestamp: '2023-10-01 13:00:00'
-  },
-  {
-    event_id: 4,
-    event_name: '特朗普上任',
-    platform: 'CFTC',
-    mentions: 300,
-    sentiment_type: false,
-    sentiment_intensity: 40,
-    timestamp: '2023-10-01 14:00:00'
-  },
-  {
-    event_id: 5,
-    event_name: '特朗普上任',
-    platform: 'SEC',
-    mentions: 700,
-    sentiment_type: true,
-    sentiment_intensity: 90,
-    timestamp: '2023-10-01 15:00:00'
-  }
-];
+// ── 左侧: 实时日志 ──
+const wsLogs = ref<any[]>([])
+const wsConnected = ref(false)
+const wsInstance = ref<WebSocket | null>(null)
+const logBox = ref<HTMLElement | null>(null)
+const triggering = ref('')
+const recentTasks = ref<any[]>([])
 
-// 分页相关状态
-const currentPage = ref(1);
-const pageSize = ref(10);
-const totalItems = ref(fakeData.length);
+const connectWS = () => {
+    if (wsInstance.value) wsInstance.value.close()
+    wsInstance.value = connectTaskLogWS(null, (msg: TaskLogMessage) => {
+        // 只显示新闻采集和情绪计算相关的日志
+        if (['news_collect', 'sentiment_calc'].includes(msg.task_type || '')) {
+            wsLogs.value.push(msg)
+            if (wsLogs.value.length > 200) wsLogs.value.shift()
+            scrollLogToBottom()
+        }
+        if (msg.type === 'task_started' || msg.type === 'task_finished') {
+            loadRecentTasks()
+        }
+    }, () => { wsConnected.value = false })
+    wsInstance.value!.onopen = () => { wsConnected.value = true }
+}
 
-// 分页事件处理
-const handleSizeChange = (newSize: number) => {
-  pageSize.value = newSize;
-};
+const scrollLogToBottom = () => {
+    nextTick(() => {
+        if (logBox.value) logBox.value.scrollTop = logBox.value.scrollHeight
+    })
+}
 
-const handleCurrentChange = (newPage: number) => {
-  currentPage.value = newPage;
-};
+const handleTrigger = async (type: 'news' | 'sentiment') => {
+    const name = type === 'news' ? '新闻采集' : '情绪计算'
+    try {
+        await ElMessageBox.confirm(`确定触发「${name}」？`, '触发任务', {
+            confirmButtonText: '确定', cancelButtonText: '取消', type: 'info'
+        })
+    } catch { return }
+    triggering.value = type
+    try {
+        const res = type === 'news' ? await triggerNewsCollection() : await triggerSentimentCalc()
+        ElMessage.success(res.data.message || `${name}已触发`)
+    } catch (e: any) {
+        ElMessage.error(`触发失败: ${e.message}`)
+    } finally {
+        triggering.value = ''
+    }
+}
 
-// 计算当前页数据
-const paginatedData = () => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  const end = start + pageSize.value;
-  return fakeData.slice(start, end);
-};
+const loadRecentTasks = async () => {
+    try {
+        const res = await fetchTaskStatus()
+        recentTasks.value = (res.data.tasks || [])
+            .filter((t: any) => ['news_collect', 'sentiment_calc'].includes(t.task_type))
+            .slice(0, 5)
+    } catch {}
+}
 
-// 抓取相关状态
-const startInterval = ref(100); // 起始时间
-const endInterval = ref(500); // 结束时间
-const platforms = ref(['Twitter', 'Reddit', 'Facebook', 'CFTC', 'SEC']); // 可选平台
-const selectedPlatforms = ref(['Twitter', 'Reddit']); // 默认选中平台
-const searchKeyword = ref(''); // 搜索关键词
+// ── 右侧: 情绪热度数据 ──
+const sentimentData = ref<any>(null)
+const loading = ref(false)
+const days = ref(7)
 
-// 定时抓取事件
-const startScheduledFetch = () => {
-  if (startInterval.value < 100 || endInterval.value > 500) {
-    alert('抓取时间区间必须在 100 到 500 分钟之间！');
-    return;
-  }
-  alert(`已启动定时抓取，时间区间：${startInterval.value} - ${endInterval.value} 分钟，平台：${selectedPlatforms.value.join(', ')}`);
-  // 这里可以添加定时抓取逻辑
-};
+const loadSentiment = async () => {
+    loading.value = true
+    try {
+        const res = await fetchHotspotSentiment({ days: days.value, top_n: 10 })
+        sentimentData.value = res.data.data || res.data
+    } catch (e: any) {
+        ElMessage.error('加载情绪数据失败')
+    } finally {
+        loading.value = false
+    }
+}
 
-// 手动抓取事件
-const fetchNow = () => {
-  alert(`立即抓取，平台：${selectedPlatforms.value.join(', ')}`);
-  // 这里可以添加立即抓取逻辑
-};
+const moodColor = (mood: string) => {
+    if (mood === '看涨' || mood === 'bullish') return '#67c23a'
+    if (mood === '看跌' || mood === 'bearish') return '#f56c6c'
+    return '#e6a23c'
+}
 
-// 搜索热度记录
-const searchRecords = () => {
-  alert(`搜索关键词：${searchKeyword.value}`);
-  // 这里可以添加搜索逻辑
-};
+const levelColor = (level: string) => {
+    const map: any = { info: '#409eff', warn: '#e6a23c', error: '#f56c6c' }
+    return map[level] || '#909399'
+}
+
+const formatTime = (ts: string) => {
+    if (!ts) return ''
+    try { return new Date(ts).toLocaleTimeString('zh-CN', { hour12: false }) } catch { return ts }
+}
+
+const statusType = (s: string) => {
+    const m: any = { running: 'primary', completed: 'success', failed: 'danger' }
+    return m[s] || 'info'
+}
+
+onMounted(() => {
+    connectWS()
+    loadRecentTasks()
+    loadSentiment()
+})
+
+onBeforeUnmount(() => {
+    wsInstance.value?.close()
+})
 </script>
 
 <template>
-  <div class="chatbox-container">
-    <div class="chatbox-container-left">
-      <h1>事件热度分析</h1>
-        <!-- WebSocket 日志信息框 -->
-        <div class="websocket-log-box">
-        <h3>WebSocket 日志信息</h3>
-        <div class="log-content">
-          <p>这里是 WebSocket 的日志信息...</p>
-          <p>这里是 WebSocket 的日志信息...</p>
-          <p>这里是 WebSocket 的日志信息...</p>
-          <p>这里是 WebSocket 的日志信息...</p>
-          <p>这里是 WebSocket 的日志信息...</p>
-          <p>这里是 WebSocket 的日志信息...</p>
-          <p>这里是 WebSocket 的日志信息...</p>
-          <p>这里是 WebSocket 的日志信息...</p>
-          <p>这里是 WebSocket 的日志信息...</p>
-          <p>这里是 WebSocket 的日志信息...</p>
+    <div class="metric-view">
+        <!-- 左侧: 实时任务日志 -->
+        <div class="left-panel">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                <h3 style="margin:0;">计划任务日志</h3>
+                <span :style="{ color: wsConnected ? '#67c23a' : '#f56c6c', fontSize: '14px' }">
+                    {{ wsConnected ? 'WS 已连接' : 'WS 未连接' }}
+                </span>
+            </div>
+
+            <!-- 触发按钮 -->
+            <div style="display:flex; gap:8px; margin-bottom:12px;">
+                <el-button type="primary" size="small" @click="handleTrigger('news')"
+                    :loading="triggering === 'news'">新闻采集</el-button>
+                <el-button type="warning" size="small" @click="handleTrigger('sentiment')"
+                    :loading="triggering === 'sentiment'">情绪计算</el-button>
+            </div>
+
+            <!-- 最近任务状态 -->
+            <div v-if="recentTasks.length" style="margin-bottom:12px;">
+                <div v-for="task in recentTasks" :key="task.task_id" class="mini-task">
+                    <span style="font-size:12px;">{{ task.task_name }}</span>
+                    <el-tag :type="statusType(task.status)" size="small">
+                        {{ task.status === 'running' ? '运行中' : task.status === 'completed' ? '完成' : task.status }}
+                    </el-tag>
+                </div>
+            </div>
+
+            <!-- 实时日志流 -->
+            <div ref="logBox" class="log-box">
+                <div v-if="!wsLogs.length" style="text-align:center; color:#666; padding:40px 0;">
+                    等待任务日志...
+                </div>
+                <div v-for="(log, idx) in wsLogs" :key="idx" class="log-line">
+                    <span class="log-time">{{ formatTime(log.timestamp) }}</span>
+                    <span :style="{ color: levelColor(log.level), fontWeight: 'bold' }">
+                        [{{ (log.level || 'info').toUpperCase() }}]
+                    </span>
+                    <span class="log-msg">{{ log.message }}</span>
+                </div>
+            </div>
         </div>
-      </div>
+
+        <!-- 右侧: 情绪热度数据 -->
+        <div class="right-panel" v-loading="loading">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                <h3 style="margin:0;">情绪热度概览</h3>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <el-select v-model="days" size="small" style="width:100px;" @change="loadSentiment">
+                        <el-option :value="1" label="1天" />
+                        <el-option :value="3" label="3天" />
+                        <el-option :value="7" label="7天" />
+                        <el-option :value="30" label="30天" />
+                    </el-select>
+                    <el-button size="small" @click="loadSentiment">刷新</el-button>
+                </div>
+            </div>
+
+            <template v-if="sentimentData">
+                <!-- 概览卡片 -->
+                <el-row :gutter="12" style="margin-bottom:16px;">
+                    <el-col :span="6">
+                        <el-card shadow="never">
+                            <div style="text-align:center;">
+                                <div style="font-size:13px; color:#999;">市场情绪</div>
+                                <div style="font-size:24px; font-weight:bold; margin-top:8px;"
+                                    :style="{ color: moodColor(sentimentData.overview?.market_mood) }">
+                                    {{ sentimentData.overview?.market_mood || '--' }}
+                                </div>
+                            </div>
+                        </el-card>
+                    </el-col>
+                    <el-col :span="6">
+                        <el-card shadow="never">
+                            <div style="text-align:center;">
+                                <div style="font-size:13px; color:#999;">平均情绪分</div>
+                                <div style="font-size:24px; font-weight:bold; margin-top:8px;">
+                                    {{ sentimentData.overview?.avg_sentiment?.toFixed(1) || '--' }}
+                                </div>
+                            </div>
+                        </el-card>
+                    </el-col>
+                    <el-col :span="6">
+                        <el-card shadow="never">
+                            <div style="text-align:center;">
+                                <div style="font-size:13px; color:#999;">平均热度</div>
+                                <div style="font-size:24px; font-weight:bold; margin-top:8px;">
+                                    {{ sentimentData.overview?.avg_heat?.toFixed(1) || '--' }}
+                                </div>
+                            </div>
+                        </el-card>
+                    </el-col>
+                    <el-col :span="6">
+                        <el-card shadow="never">
+                            <div style="text-align:center;">
+                                <div style="font-size:13px; color:#999;">事件总数</div>
+                                <div style="font-size:24px; font-weight:bold; margin-top:8px;">
+                                    {{ sentimentData.overview?.total_events || 0 }}
+                                </div>
+                            </div>
+                        </el-card>
+                    </el-col>
+                </el-row>
+
+                <!-- 情绪分布 -->
+                <el-row :gutter="12" style="margin-bottom:16px;">
+                    <el-col :span="12">
+                        <el-card shadow="never">
+                            <template #header><span>情绪分布</span></template>
+                            <div v-if="sentimentData.sentiment_distribution" style="display:flex; gap:16px;">
+                                <div style="flex:1; text-align:center;">
+                                    <div style="color:#67c23a; font-size:28px; font-weight:bold;">
+                                        {{ sentimentData.sentiment_distribution.bullish?.count || 0 }}
+                                    </div>
+                                    <div style="font-size:12px; color:#999;">
+                                        看涨 ({{ sentimentData.sentiment_distribution.bullish?.pct || 0 }}%)
+                                    </div>
+                                </div>
+                                <div style="flex:1; text-align:center;">
+                                    <div style="color:#e6a23c; font-size:28px; font-weight:bold;">
+                                        {{ sentimentData.sentiment_distribution.neutral?.count || 0 }}
+                                    </div>
+                                    <div style="font-size:12px; color:#999;">
+                                        中性 ({{ sentimentData.sentiment_distribution.neutral?.pct || 0 }}%)
+                                    </div>
+                                </div>
+                                <div style="flex:1; text-align:center;">
+                                    <div style="color:#f56c6c; font-size:28px; font-weight:bold;">
+                                        {{ sentimentData.sentiment_distribution.bearish?.count || 0 }}
+                                    </div>
+                                    <div style="font-size:12px; color:#999;">
+                                        看跌 ({{ sentimentData.sentiment_distribution.bearish?.pct || 0 }}%)
+                                    </div>
+                                </div>
+                            </div>
+                        </el-card>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-card shadow="never">
+                            <template #header><span>趋势币种 TOP5</span></template>
+                            <div v-for="(coin, idx) in (sentimentData.trending_coins || []).slice(0, 5)" :key="idx"
+                                style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid #f0f0f0;">
+                                <span>{{ coin.symbol || coin.coin_symbol }}</span>
+                                <el-tag size="small">{{ coin.event_count || coin.count }} 条事件</el-tag>
+                            </div>
+                        </el-card>
+                    </el-col>
+                </el-row>
+
+                <!-- 热门事件表 -->
+                <el-card shadow="never">
+                    <template #header><span>热门事件 TOP10</span></template>
+                    <el-table :data="sentimentData.trending || []" size="small" stripe>
+                        <el-table-column prop="event_name" label="事件" min-width="200" show-overflow-tooltip />
+                        <el-table-column label="情绪" width="80">
+                            <template #default="{ row }">
+                                <span :style="{ color: row.sentiment_score > 0 ? '#67c23a' : row.sentiment_score < 0 ? '#f56c6c' : '#e6a23c' }">
+                                    {{ row.sentiment_score?.toFixed(0) }}
+                                </span>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="热度" width="80">
+                            <template #default="{ row }">{{ row.heat_index?.toFixed(0) }}</template>
+                        </el-table-column>
+                        <el-table-column label="来源数" width="70" prop="source_count" />
+                    </el-table>
+                </el-card>
+            </template>
+
+            <div v-else-if="!loading" style="text-align:center; color:#ccc; padding:60px;">暂无数据</div>
+        </div>
     </div>
-    <div class="chatbox-container-right">
-      <h1>热度信息列表</h1>
-      <div class="controls">
-        <div class="control-item">
-          <span style="width: 180px;">抓取时间区间（分钟):</span>
-          <el-input-number v-model="startInterval" :min="100" :max="500" style="margin-left: 20px;margin-right: 20px;"/>
-          <span>至</span>
-          <el-input-number v-model="endInterval" :min="100" :max="500" />
-          <el-input v-model="searchKeyword" placeholder="请输入搜索关键词" style="width: 510px; margin-left:20px ;"/>
-
-        </div>
-
-        <div class="control-item">
-          <span style="width: 180px;">选择抓取平台：</span>
-          <el-select v-model="selectedPlatforms" multiple placeholder="请选择抓取平台" style="width: 600px; margin-left: 20px; margin-right: 20px;" >
-            <el-option
-              v-for="platform in platforms"
-              :key="platform"
-              :label="platform"
-              :value="platform"
-            />
-          </el-select>
-          <el-button type="primary" @click="startScheduledFetch">启动定时抓取</el-button>
-          <el-button type="success" @click="fetchNow">现在抓取更新</el-button>
-        </div>
-
-      </div>
-      <el-table :data="paginatedData()" style="width: 100%">
-        <el-table-column prop="event_id" label="事件ID" width="100" />
-        <el-table-column prop="event_name" label="事件名称" width="150" />
-        <el-table-column prop="platform" label="平台" width="120" />
-        <el-table-column prop="mentions" label="提及次数" width="120" />
-        <el-table-column prop="sentiment_type" label="情绪类型" width="120">
-          <template #default="{ row }">
-            {{ row.sentiment_type ? '积极' : '消极' }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="sentiment_intensity" label="情绪程度" width="120" />
-        <el-table-column prop="timestamp" label="记录时间" width="180" />
-      </el-table>
-      <el-pagination
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-        :current-page="currentPage"
-        :page-size="pageSize"
-        :total="totalItems"
-        layout="total, sizes, prev, pager, next, jumper"
-      />
-      
-    </div>
-  </div>
 </template>
 
 <style scoped>
-.chatbox-container {
-  display: flex;
-  padding: 20px;
-  height: 100%;
-  width: 100%;
+.metric-view {
+    display: flex;
+    gap: 12px;
+    height: calc(100vh - 120px);
+    padding: 4px;
 }
 
-.chatbox-container-left {
-  flex: 1;
-  padding: 20px;
-  background-color: #f0f0f0;
-  border-right: 1px solid #ddd;
+.left-panel {
+    width: 340px;
+    min-width: 340px;
+    display: flex;
+    flex-direction: column;
+    background: #fafafa;
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid #ebeef5;
 }
 
-.chatbox-container-right {
-  flex: 3;
-  padding: 20px;
+.right-panel {
+    flex: 1;
+    overflow-y: auto;
+    min-width: 0;
 }
 
-h1 {
-  font-size: 24px;
-  margin-bottom: 20px;
+.mini-task {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px;
+    background: #fff;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    border: 1px solid #ebeef5;
 }
 
-.controls {
-  margin-bottom: 20px;
+.log-box {
+    flex: 1;
+    overflow-y: auto;
+    background: #1e1e1e;
+    border-radius: 6px;
+    padding: 10px;
+    font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+    font-size: 11px;
+    line-height: 1.7;
+    color: #d4d4d4;
+    min-height: 200px;
 }
 
-.control-item {
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  width: 1000px;
-}
-.control-item .control-item span {
-  margin-right: 20px;
-  margin-right: 20px;
+.log-line {
+    display: flex;
+    gap: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.control-item span {
-  margin-right: 10px;
+.log-time {
+    color: #6a9955;
+    flex-shrink: 0;
 }
 
-.el-table {
-  margin-top: 20px;
-}
-
-.el-pagination {
-  margin-top: 20px;
-  text-align: right;
+.log-msg {
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 </style>
