@@ -28,6 +28,12 @@ export const triggerCoinInfoFetch = (params?: {
     max_retries?: number
 }) => cronApi.post('tasks/fetch_coin_info', params || {})
 
+/** 手动触发 K 线聚合 */
+export const triggerKlineAggregate = (params?: {
+    intervals?: string[]
+    lookback_hours?: number
+}) => cronApi.post('tasks/aggregate_kline', params || {})
+
 // ── WebSocket 连接 ──
 
 export interface TaskLogMessage {

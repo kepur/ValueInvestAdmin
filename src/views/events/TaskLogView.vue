@@ -6,6 +6,7 @@ import {
     triggerNewsCollection,
     triggerSentimentCalc,
     triggerCoinInfoFetch,
+    triggerKlineAggregate,
     connectTaskLogWS,
     type TaskLogMessage,
 } from '@/utils/tasklogapi'
@@ -83,8 +84,8 @@ const connectWS = () => {
 }
 
 // ── 手动触发任务 ──
-const handleTrigger = async (type: 'news' | 'sentiment' | 'coininfo') => {
-    const nameMap: Record<string, string> = { news: '新闻采集', sentiment: '情绪计算', coininfo: '代币信息抓取' }
+const handleTrigger = async (type: 'news' | 'sentiment' | 'coininfo' | 'kline') => {
+    const nameMap: Record<string, string> = { news: '新闻采集', sentiment: '情绪计算', coininfo: '代币信息抓取', kline: 'K线聚合' }
     const name = nameMap[type] || type
     try {
         await ElMessageBox.confirm(`确定要手动触发「${name}」任务吗？`, '触发任务', {
@@ -99,6 +100,7 @@ const handleTrigger = async (type: 'news' | 'sentiment' | 'coininfo') => {
         let res
         if (type === 'news') res = await triggerNewsCollection()
         else if (type === 'sentiment') res = await triggerSentimentCalc()
+        else if (type === 'kline') res = await triggerKlineAggregate()
         else res = await triggerCoinInfoFetch()
 
         const data = res.data
@@ -170,6 +172,9 @@ onBeforeUnmount(() => {
                     </el-button>
                     <el-button type="success" @click="handleTrigger('coininfo')" :loading="triggering === 'coininfo'">
                         触发代币抓取
+                    </el-button>
+                    <el-button type="info" @click="handleTrigger('kline')" :loading="triggering === 'kline'">
+                        触发K线聚合
                     </el-button>
                     <el-button @click="loadTasks">刷新列表</el-button>
                 </div>
