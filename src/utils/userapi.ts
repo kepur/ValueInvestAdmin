@@ -24,6 +24,22 @@ export const deleteUser = (id: number) => {
   return api.delete(`users/${id}`)
 }
 
+// 获取当前用户个人信息
+export const fetchUserProfile = () => {
+  return api.get('user/profile')
+}
+
+// 更新当前用户个人信息
+export const updateUserProfile = (data: {
+  email?: string
+  phone?: string
+  telegram_id?: string
+  avatar?: string
+  password?: string
+}) => {
+  return api.put('user/profile', data)
+}
+
 // Fetch all roles
 export const fetchAllRoles = () => {
   return api.get('roles')

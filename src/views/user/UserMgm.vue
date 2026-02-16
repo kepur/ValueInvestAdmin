@@ -4,7 +4,9 @@
     <el-table :data="users" style="width: 100%" v-loading="loading">
       <el-table-column prop="id" label="ID" width="60"></el-table-column>
       <el-table-column prop="username" label="Username"></el-table-column>
-      <el-table-column prop="email" label="Email"></el-table-column>
+      <el-table-column prop="email" label="Email" min-width="160" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="phone" label="手机号" width="130"></el-table-column>
+      <el-table-column prop="telegram_id" label="Telegram" width="130" show-overflow-tooltip></el-table-column>
       <el-table-column prop="roles" label="Roles">
         <template #default="scope">
           <span v-for="role in scope.row.roles" :key="role" class="role-tag">{{ role }}</span>
@@ -28,6 +30,14 @@
         <!-- Email -->
         <el-form-item label="Email" prop="email">
           <el-input v-model="formData.email"></el-input>
+        </el-form-item>
+        <!-- Phone -->
+        <el-form-item label="手机号" prop="phone">
+          <el-input v-model="formData.phone" placeholder="手机号码"></el-input>
+        </el-form-item>
+        <!-- Telegram -->
+        <el-form-item label="Telegram" prop="telegram_id">
+          <el-input v-model="formData.telegram_id" placeholder="Telegram 用户名或 Chat ID"></el-input>
         </el-form-item>
         <!-- Password -->
         <el-form-item label="Password" prop="password">
@@ -73,6 +83,9 @@ interface User {
   id: number | null
   username: string
   email: string
+  phone?: string
+  telegram_id?: string
+  avatar?: string
   password?: string
   roles: string[]
   created_at?: string
@@ -86,6 +99,8 @@ const formData = ref<User>({
   id: null,
   username: '',
   email: '',
+  phone: '',
+  telegram_id: '',
   password: '',
   roles: []
 })
@@ -140,7 +155,7 @@ const openCreateUserdialog = (user: User | null) => {
 
     rules.password[0].required = false
   } else {
-    formData.value = { id: null, username: '', email: '', password: '', roles: [] }
+    formData.value = { id: null, username: '', email: '', phone: '', telegram_id: '', password: '', roles: [] }
     rules.password[0].required = true
   }
   dialogVisible.value = true
@@ -156,6 +171,8 @@ const submitForm = async () => {
           const updateData: any = {
             username: formData.value.username,
             email: formData.value.email,
+            phone: formData.value.phone,
+            telegram_id: formData.value.telegram_id,
             roles: formData.value.roles
           }
           if (formData.value.password) {
