@@ -64,7 +64,9 @@ export function connectTaskLogWS(
     onClose?: () => void,
 ): WebSocket {
     const path = taskId ? `tasks/ws/task_logs/${taskId}` : 'tasks/ws/task_logs'
-    const ws = new WebSocket(`${cronWsURL}${path}`)
+    // 确保 URL 拼接正确
+    const normalizedBase = cronWsURL.endsWith('/') ? cronWsURL : `${cronWsURL}/`
+    const ws = new WebSocket(`${normalizedBase}${path}`)
 
     ws.onmessage = (event) => {
         try {

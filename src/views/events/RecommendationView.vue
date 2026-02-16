@@ -18,7 +18,13 @@ interface cointype_search{
 }
 
 
-const coinSearchKeyword = ref(''); // 绑定用户输入的关键字
+const coinSearchKeyword = ref('');
+const ecosystemKeyword = ref('');
+const cointypeKeyword = ref('');
+const founderKeyword = ref('');
+const institutionKeyword = ref('');
+const institutionInfoKeyword = ref('');
+
 const messages = ref<Message[]>([]);
 const newMessage = ref('');
 
@@ -31,13 +37,11 @@ const scrollToBottom = () => {
 };
 
 const loadHistory = async () => {
-  setTimeout(() => {
-    const history: Message[] = [
-      { role: 'assistant', content: '```javascript\n我是您的系统助手!\n```' },
-    ];
-    messages.value.unshift(...history);
-    scrollToBottom();
-  }, 1000); // 模拟延迟加载
+  const history: Message[] = [
+    { role: 'assistant', content: '我是您的系统助手! 这里显示实时任务执行日志。' },
+  ];
+  messages.value.push(...history);
+  scrollToBottom();
 };
 
 const handleChatResponse = (data: { messages: Message[] }) => {
@@ -50,10 +54,15 @@ const handleChatResponse = (data: { messages: Message[] }) => {
 };
 const HandleProceeTop100=async()=>{
   try {
-    const coin_search = await coinmarket_top100();
-    console.log('coin_search:', coin_search);
+    messages.value.push({ role: 'user', content: '请求批量添加 TOP100 主流代币' });
+    if (recommendation_socket) {
+        recommendation_socket.emit('start_process', { task: 'TOP100 批量添加' });
+    }
+    const res = await coinmarket_top100();
+    console.log('coinmarket_top100:', res);
   } catch (error) {
     console.error('查询失败:', error);
+    messages.value.push({ role: 'assistant', content: 'TOP100 批量添加请求失败' });
   }
 }
 
@@ -64,10 +73,10 @@ const handleCoinSearch = async () => {
   }
 
   try {
-    const coin_search = await fetchCoinSearch({ coin_search: coinSearchKeyword.value });
-    console.log('coin_search:', coin_search);
-    if (coin_search) {
-      messages.value.push({ role: 'assistant', content: `代币搜索结果: ${coin_search}` });
+    const res = await fetchCoinSearch({ coin_search: coinSearchKeyword.value });
+    console.log('coin_search:', res);
+    if (res && res.data) {
+      messages.value.push({ role: 'assistant', content: `代币搜索结果: ${JSON.stringify(res.data)}` });
       scrollToBottom();
     }
   } catch (error) {
@@ -76,14 +85,53 @@ const handleCoinSearch = async () => {
     scrollToBottom();
   }
 };
+const handleGenericAction = (task: string, label: string) => {
+    let keyword = '';
+    switch(label) {
+        case '代币链': keyword = ecosystemKeyword.value; break;
+        case '代币类型': keyword = cointypeKeyword.value; break;
+        case '创始团队': keyword = founderKeyword.value; break;
+        case '投资机构': keyword = institutionKeyword.value; break;
+        case '投资机构信息': keyword = institutionInfoKeyword.value; break;
+        default: keyword = coinSearchKeyword.value;
+    }
+
+    const content = keyword ? `请求: ${label} - ${task} (关键字: ${keyword})` : `请求: ${label} - ${task}`;
+    messages.value.push({ role: 'user', content });
+    
+    if (recommendation_socket) {
+        recommendation_socket.emit('start_process', { 
+            task: `${label} ${task}`,
+            keyword: keyword 
+        });
+    }
+}
+const handleCoinUpdate = () => {
+    if (!coinSearchKeyword.value.trim()) return;
+    messages.value.push({ role: 'user', content: `请求 AI 更新代币信息: ${coinSearchKeyword.value}` });
+    if (recommendation_socket) {
+        recommendation_socket.emit('start_process', { task: `更新 ${coinSearchKeyword.value} 信息` });
+    }
+}
+
+const handleCoinAdd = () => {
+    if (!coinSearchKeyword.value.trim()) return;
+    messages.value.push({ role: 'user', content: `请求 AI 自动添加代币: ${coinSearchKeyword.value}` });
+    if (recommendation_socket) {
+        recommendation_socket.emit('start_process', { task: `自动添加 ${coinSearchKeyword.value}` });
+    }
+}
+
 onMounted(() => {
   recommendation_socket = createRecommendationSocket({
     onConnect: () => {
       console.log('Recommendation Socket connected');
+      messages.value.push({ role: 'assistant', content: 'WebSocket 已连接，准备就绪。' });
     },
     onMessage: handleChatResponse,
     onDisconnect: () => {
       console.log('Recommendation Socket disconnected');
+      messages.value.push({ role: 'assistant', content: 'WebSocket 已断开。' });
     },
     onError: (error) => {
       console.error('Recommendation Socket error:', error);
@@ -105,53 +153,53 @@ onMounted(() => {
       <!-- 批量添加按钮 -->
       <div class="batch-buttons">
         <el-button type="primary" @click="HandleProceeTop100">TOP100 主流代币批量添加</el-button>
-        <el-button type="primary">代币链批量添加</el-button>
-        <el-button type="primary">代币类型批量添加</el-button>
-        <el-button type="primary">创始团队批量添加</el-button>
-        <el-button type="primary">投资机构信息批量添加</el-button>
-        <el-button type="primary">代币名称批量添加</el-button>
+        <el-button type="primary" @click="handleGenericAction('批量添加', '代币链')">代币链批量添加</el-button>
+        <el-button type="primary" @click="handleGenericAction('批量添加', '代币类型')">代币类型批量添加</el-button>
+        <el-button type="primary" @click="handleGenericAction('批量添加', '创始团队')">创始团队批量添加</el-button>
+        <el-button type="primary" @click="handleGenericAction('批量添加', '投资机构信息')">投资机构信息批量添加</el-button>
+        <el-button type="primary" @click="handleGenericAction('批量添加', '代币名称')">代币名称批量添加</el-button>
       </div>
       <div class="function-row">
         <span class="label">代币链</span>
-        <el-input placeholder="输入关键字" class="input" />
-        <el-button type="primary" class="button">查询</el-button>
-        <el-button type="warning" class="button">AI 更新</el-button>
-        <el-button type="success" class="button">AI 自动添加</el-button>
+        <el-input v-model="ecosystemKeyword" placeholder="输入关键字" class="input" />
+        <el-button type="primary" class="button" @click="handleGenericAction('常规查询', '代币链')">查询</el-button>
+        <el-button type="warning" class="button" @click="handleGenericAction('AI 更新', '代币链')">AI 更新</el-button>
+        <el-button type="success" class="button" @click="handleGenericAction('AI 自动添加', '代币链')">AI 自动添加</el-button>
       </div>
       <div class="function-row">
-  <span class="label">代币名称</span>
-    <el-input v-model="coinSearchKeyword" placeholder="输入关键字" class="input" />
-    <el-button type="primary" class="button" @click="handleCoinSearch">查询</el-button>
-    <el-button type="warning" class="button" @click="handleCoinUpdate">AI 更新</el-button>
-    <el-button type="success" class="button" @click="handleCoinAdd">AI 自动添加</el-button>
-  </div>
+        <span class="label">代币名称</span>
+        <el-input v-model="coinSearchKeyword" placeholder="输入关键字" class="input" />
+        <el-button type="primary" class="button" @click="handleCoinSearch">查询</el-button>
+        <el-button type="warning" class="button" @click="handleCoinUpdate">AI 更新</el-button>
+        <el-button type="success" class="button" @click="handleCoinAdd">AI 自动添加</el-button>
+      </div>
       <div class="function-row">
         <span class="label">代币类型</span>
-        <el-input placeholder="输入关键字" class="input" />
-        <el-button type="primary" class="button">查询</el-button>
-        <el-button type="warning" class="button">AI 更新</el-button>
-        <el-button type="success" class="button">AI 自动添加</el-button>
+        <el-input v-model="cointypeKeyword" placeholder="输入关键字" class="input" />
+        <el-button type="primary" class="button" @click="handleGenericAction('常规查询', '代币类型')">查询</el-button>
+        <el-button type="warning" class="button" @click="handleGenericAction('AI 更新', '代币类型')">AI 更新</el-button>
+        <el-button type="success" class="button" @click="handleGenericAction('AI 自动添加', '代币类型')">AI 自动添加</el-button>
       </div>
       <div class="function-row">
         <span class="label">创始团队</span>
-        <el-input placeholder="输入关键字" class="input" />
-        <el-button type="primary" class="button">查询</el-button>
-        <el-button type="warning" class="button">AI 更新</el-button>
-        <el-button type="success" class="button">AI 自动添加</el-button>
+        <el-input v-model="founderKeyword" placeholder="输入关键字" class="input" />
+        <el-button type="primary" class="button" @click="handleGenericAction('常规查询', '创始团队')">查询</el-button>
+        <el-button type="warning" class="button" @click="handleGenericAction('AI 更新', '创始团队')">AI 更新</el-button>
+        <el-button type="success" class="button" @click="handleGenericAction('AI 自动添加', '创始团队')">AI 自动添加</el-button>
       </div>
       <div class="function-row">
         <span class="label">投资机构</span>
-        <el-input placeholder="输入关键字" class="input" />
-        <el-button type="primary" class="button">查询</el-button>
-        <el-button type="warning" class="button">AI 更新</el-button>
-        <el-button type="success" class="button">AI 自动添加</el-button>
+        <el-input v-model="institutionKeyword" placeholder="输入关键字" class="input" />
+        <el-button type="primary" class="button" @click="handleGenericAction('常规查询', '投资机构')">查询</el-button>
+        <el-button type="warning" class="button" @click="handleGenericAction('AI 更新', '投资机构')">AI 更新</el-button>
+        <el-button type="success" class="button" @click="handleGenericAction('AI 自动添加', '投资机构')">AI 自动添加</el-button>
       </div>
       <div class="function-row">
         <span class="label">投资机构信息</span>
-        <el-input placeholder="输入关键字" class="input" />
-        <el-button type="primary" class="button">查询</el-button>
-        <el-button type="warning" class="button">AI 更新</el-button>
-        <el-button type="success" class="button">AI 自动添加</el-button>
+        <el-input v-model="institutionInfoKeyword" placeholder="输入关键字" class="input" />
+        <el-button type="primary" class="button" @click="handleGenericAction('常规查询', '投资机构信息')">查询</el-button>
+        <el-button type="warning" class="button" @click="handleGenericAction('AI 更新', '投资机构信息')">AI 更新</el-button>
+        <el-button type="success" class="button" @click="handleGenericAction('AI 自动添加', '投资机构信息')">AI 自动添加</el-button>
       </div>
 
     </div>
@@ -159,9 +207,10 @@ onMounted(() => {
       <!-- WebSocket 日志信息框 -->
       <div class="websocket-log-box">
         <h3>WebSocket 日志信息</h3>
-        <div class="log-content" v-for="msg,index in messages" :key="index" :class="['message', msg.role]">
-          <p>{{ msg.content }}</p>
-          <p>这里是 WebSocket 的日志信息...</p>
+        <div class="chat-messages">
+          <div v-for="msg,index in messages" :key="index" :class="['message', msg.role]">
+            <p class="content">{{ msg.content }}</p>
+          </div>
         </div>
       </div>
     </div>
@@ -236,18 +285,37 @@ h1 {
 .websocket-log-box h3 {
   margin-bottom: 10px;
   font-size: 16px;
+  border-bottom: 1px solid #555;
+  padding-bottom: 5px;
 }
 
-.log-content {
+.chat-messages {
   flex: 1;
-  overflow-y: auto; /* 添加滚动条 */
+  overflow-y: auto; 
   padding: 5px;
-  background-color: #444; /* 日志内容背景色 */
+}
+
+.message {
+  margin-bottom: 10px;
+  padding: 8px;
   border-radius: 4px;
 }
 
-.log-content p {
-  margin: 5px 0;
-  font-size: 14px;
+.message.assistant {
+  background-color: #444;
+  border-left: 4px solid #4ade80;
+}
+
+.message.user {
+  background-color: #555;
+  border-left: 4px solid #60a5fa;
+  text-align: right;
+}
+
+.content {
+  margin: 0;
+  font-size: 13px;
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 </style>

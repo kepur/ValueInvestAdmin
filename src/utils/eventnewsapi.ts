@@ -2,7 +2,7 @@
 import api from "./api";
 //获取新闻热度列表
 export const fetchAllEventNews = () => {
-    return api.get('/all_event_news')
+    return api.get('all_event_news')
 }
 //
 export const fetchEvents = (params: {
@@ -12,7 +12,7 @@ export const fetchEvents = (params: {
     sort_field?: string; // 排序字段
     sort_order?: string; // 排序方式：asc（升序）或 desc（降序）
   }) => {
-    return api.get('/events', { params });
+    return api.get('events', { params });
   };
 
 //创建
@@ -31,7 +31,7 @@ export const createEvent=(
         if (data.event_type_id === 0) {
             data.event_type_id = null;
         }
-        return api.post('/events',data)
+        return api.post('events',data)
 }
 
 //修改
@@ -56,7 +56,7 @@ export const deleteEvent=(
 
 ////****************************事件类型****************************
 export const fetchEventTypes=()=>{
-    return api.get('/event_types')
+    return api.get('event_types')
 }
 
 //创建
@@ -65,7 +65,7 @@ export const createEventType=(
         name:string
         description:string
     }
-)=>api.post('/event_types',data)
+)=>api.post('event_types',data)
 
 //修改
 export const updateEventType=(

@@ -7,10 +7,10 @@ export const fetchCoinsTypes = (params:{
     pageSize:number,
     search?:string
 })=>{
-    return api.get('/cointypes',{params})
+    return api.get('cointypes',{params})
 }
 export const fetchAllCoinTypes =()=>{
-    return api.get('/cointypes_all')
+    return api.get('cointypes_all')
 }
 //创建
 export const createCoinType=(
@@ -18,7 +18,7 @@ export const createCoinType=(
         type_name:string,
         description:string
     }
-)=>api.post('/cointypes',data)
+)=>api.post('cointypes',data)
 //修改
 export const updateCoinType=(
     id:number,
@@ -34,10 +34,10 @@ export const DeleteCoinType=(
 
 //****************************创始人获取列表****************************
 export const fetchFounders=(params:{page:number,pageSize:number,search?:string})=>{
-    return api.get('/founders',{params})
+    return api.get('founders',{params})
 }
 export const fetchAllFounders=()=>{
-    return api.get('/founders_all')
+    return api.get('founders_all')
 }
 //创建
 export const createFounder=(
@@ -46,7 +46,7 @@ export const createFounder=(
         team_name:string
         reputation_score:number
     }
-)=>api.post('/founders',data)
+)=>api.post('founders',data)
 //修改
 export const updateFounder=(
     id:number,
@@ -63,10 +63,10 @@ export const deleteFounder=(
 
 //****************************生态系统获取列表****************************
 export const fetchEcosystems=(params:{page:number,pageSize:number,search?:string})=>{
-    return api.get('/ecosystems',{params})
+    return api.get('ecosystems',{params})
 }
 export const fetchAllEcosystems=()=>{
-    return api.get('/ecosystems_all')
+    return api.get('ecosystems_all')
 }
 //创建
 export const createEcosystem=(
@@ -74,7 +74,7 @@ export const createEcosystem=(
         name:string,
         description:string
     }
-)=>api.post('/ecosystems',data)
+)=>api.post('ecosystems',data)
 //修改
 export const updateEcosystem=(
     id:number,
@@ -90,10 +90,10 @@ export const deleteEcosystem=(
 
 //****************************投资机构获取列表****************************
 export const fetchInvestmentInstitutions=(params:{page:number,pageSize:number,search?:string})=>{
-    return api.get('/investmentinstitutions',{params})
+    return api.get('investmentinstitutions',{params})
 }
 export const fetchAllInvestmentInstitutions=()=>{
-    return api.get('/investmentinstitutions_all')
+    return api.get('investmentinstitutions_all')
 }
 //创建
 export const createInvestmentInstitution=(
@@ -101,7 +101,7 @@ export const createInvestmentInstitution=(
         name:string,
         description:string
     }
-)=>api.post('/investmentinstitutions',data)
+)=>api.post('investmentinstitutions',data)
 //修改
 export const updateInvestmentInstitution=(
     id:number,
@@ -118,7 +118,7 @@ export const DeleteInvestmentInstitution=(
 
 //****************************投资机构基本信息获取列表****************************
 export const fetchAllCoinInvestment=(params: { page: number; pageSize: number; search?: string }) => {
-        return api.get('/coininvestments', { params });
+        return api.get('coininvestments', { params });
     };
 
 //创建
@@ -129,7 +129,7 @@ export const createCoinInvestment=(
         holding_amount:number,
         holding_percentage:number
     }
-)=>api.post('/coininvestments',data)
+)=>api.post('coininvestments',data)
 
 //修改
 export const updateCoinInvestment=(
@@ -151,11 +151,11 @@ export const deleteCoinInvestment=(
 
 // 获取币种列表，支持分页和搜索
 export const fetchAllCoins = () => {
-    return api.get('/coins_all');
+    return api.get('coins_all');
   };
 
 export const fetchCoins = (params: { page: number; pageSize: number; search?: string }) => {
-    return api.get('/coins', { params });
+    return api.get('coins', { params });
 };
 //创建
 export const createCoin = (
@@ -175,7 +175,7 @@ export const createCoin = (
     //     data.ecosystem_id = null;
     // }
     
-    return api.post('/coins', data);
+    return api.post('coins', data);
 }
 
 //修改

@@ -178,9 +178,21 @@ export const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
+          path: 'systemlog',
+          name: 'systemlog',
+          component: () => import('../views/SystemLogView.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
           path: 'coin',
           name: 'coin',
           component: () => import('../views/coininfo/CoinView.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
+          path: 'marketchart',
+          name: 'marketchart',
+          component: () => import('../views/coininfo/MarketChartView.vue'),
           meta: { requiresAuth: true }
         },
         {

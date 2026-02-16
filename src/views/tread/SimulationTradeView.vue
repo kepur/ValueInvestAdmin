@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { fetchWalletBalance, updateWallet, executeTrade, fetchTradeRecords, fetchUserAssets, fetchLimitOrders, createLimitOrder, cancelLimitOrder } from '@/utils/tradapi'
-import { fetchRealTimePrice } from '@/utils/priceapi'
+import { fetchCurrentMarketPrice } from '@/utils/priceapi'
 import { fetchAllCoins } from '@/utils/coinapi'
 
 const TRADE_TYPE = 'simulation'
@@ -19,10 +19,13 @@ const coins = ref<any[]>([])
 
 // 交易模式: market(市价) / limit(限价)
 const tradeMode = ref<'market' | 'limit'>('market')
+// 数量模式: quantity(按数量) / amount(按金额)
+const amountMode = ref<'quantity' | 'amount'>('quantity')
 
 // 交易表单
 const selectedCoinId = ref<number | null>(null)
-const tradeAmount = ref(0)
+const tradeAmount = ref(0) // 交易数量 (Coin)
+const tradeTotal = ref(0)  // 交易金额 (USDT)
 const limitPrice = ref(0)
 const trading = ref(false)
 
@@ -57,8 +60,29 @@ const totalCost = computed(() => {
   if (tradeMode.value === 'limit') {
     return tradeAmount.value * limitPrice.value
   }
+  // 市价模式下，如果按金额交易，直接返回 tradeTotal
+  if (amountMode.value === 'amount') {
+    return tradeTotal.value
+  }
   return tradeAmount.value * selectedCoinPrice.value
 })
+
+// 监听输入变化，自动计算另一方
+const onAmountChange = () => {
+  if (selectedCoinPrice.value > 0) {
+    if (amountMode.value === 'quantity') {
+      tradeTotal.value = Number((tradeAmount.value * selectedCoinPrice.value).toFixed(2))
+    } else {
+      tradeAmount.value = Number((tradeTotal.value / selectedCoinPrice.value).toFixed(6))
+    }
+  }
+}
+
+const onTotalChange = () => {
+    if (selectedCoinPrice.value > 0 && amountMode.value === 'amount') {
+         tradeAmount.value = Number((tradeTotal.value / selectedCoinPrice.value).toFixed(6))
+    }
+}
 
 // 加载钱包余额
 const loadWallet = async () => {
@@ -71,10 +95,15 @@ const loadWallet = async () => {
 }
 
 // 加载实时价格
+// 加载实时价格 (从数据库)
 const loadPrices = async () => {
   try {
-    const res = await fetchRealTimePrice()
-    marketPrices.value = res.data.data || []
+    const res = await fetchCurrentMarketPrice()
+    // 转换数据格式适配
+    marketPrices.value = (res.data || []).map((item: any) => ({
+      symbol: item.symbol,
+      price: item.prices && item.prices.length > 0 ? item.prices[0].price : 0
+    }))
   } catch (e) {
     console.error('加载实时价格失败', e)
   }
@@ -349,12 +378,29 @@ onMounted(async () => {
             使用市价
           </el-button>
         </el-form-item>
-        <el-form-item label="交易数量">
-          <el-input-number v-model="tradeAmount" :min="0" :precision="6" :step="0.1" style="width: 200px;" />
+        <el-form-item label="交易方式" v-if="tradeMode === 'market'">
+            <el-radio-group v-model="amountMode" size="small" @change="onAmountChange">
+                <el-radio-button label="quantity">按数量 (Coin)</el-radio-button>
+                <el-radio-button label="amount">按金额 (USDT)</el-radio-button>
+            </el-radio-group>
         </el-form-item>
-        <el-form-item label="交易总额">
+        
+        <el-form-item label="交易数量" v-if="amountMode === 'quantity' || tradeMode === 'limit'">
+          <el-input-number v-model="tradeAmount" :min="0" :precision="6" :step="0.1" style="width: 200px;" @change="onAmountChange" />
+          <span style="margin-left: 10px; color: #909399;">{{ coins.find(c => c.id === selectedCoinId)?.symbol }}</span>
+        </el-form-item>
+        
+        <el-form-item label="交易金额" v-if="amountMode === 'amount' && tradeMode === 'market'">
+             <el-input-number v-model="tradeTotal" :min="0" :precision="2" :step="100" style="width: 200px;" @change="onTotalChange" />
+             <span style="margin-left: 10px; color: #909399;">USDT</span>
+        </el-form-item>
+
+        <el-form-item label="预计价值">
           <span style="font-size: 16px; font-weight: bold;">
             ${{ totalCost.toFixed(2) }}
+          </span>
+          <span v-if="amountMode === 'amount'" style="margin-left: 10px; font-size: 12px; color: #909399;">
+            (≈ {{ tradeAmount }} {{ coins.find(c => c.id === selectedCoinId)?.symbol }})
           </span>
         </el-form-item>
         <el-form-item>

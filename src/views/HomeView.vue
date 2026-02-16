@@ -34,7 +34,7 @@ const loadPrices = async () => {
 const handleSync = async () => {
   syncing.value = true
   try {
-    const res = await syncRealTimePrice()
+    const res = await syncRealTimePrice({})
     ElMessage.success(res.data.message || '价格同步成功')
     loadPrices()
   } catch (error) {

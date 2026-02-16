@@ -9,12 +9,12 @@ export const fetchTradeRecords = (params?: {
     coin_id?: number
     action?: string
 }) => {
-    return api.get('/trade_records', { params })
+    return api.get('trade_records', { params })
 }
 
 // 获取钱包余额
 export const fetchWalletBalance = () => {
-    return api.get('/wallet/balance')
+    return api.get('wallet/balance')
 }
 
 // 钱包充值/提现
@@ -23,7 +23,7 @@ export const updateWallet = (data: {
     transaction_type: string
     trade_type: string
 }) => {
-    return api.post('/wallet/update', data)
+    return api.post('wallet/update', data)
 }
 
 // 执行买入/卖出交易
@@ -33,14 +33,14 @@ export const executeTrade = (data: {
     amount: number
     trade_type: string
 }) => {
-    return api.post('/trades', data)
+    return api.post('trades', data)
 }
 
 // 获取用户当前持仓
 export const fetchUserAssets = (params?: {
     trade_type?: string
 }) => {
-    return api.get('/user_assets', { params })
+    return api.get('user_assets', { params })
 }
 
 // 获取交易历史
@@ -49,7 +49,7 @@ export const fetchTransactionHistory = (params?: {
     pageSize?: number
     coin_id?: number
 }) => {
-    return api.get('/transaction_history', { params })
+    return api.get('transaction_history', { params })
 }
 
 //****************************委托单（限价单）****************************
@@ -61,7 +61,7 @@ export const fetchLimitOrders = (params?: {
     status?: string
     coin_id?: number
 }) => {
-    return api.get('/limit_orders', { params })
+    return api.get('limit_orders', { params })
 }
 
 // 创建委托单
@@ -72,7 +72,7 @@ export const createLimitOrder = (data: {
     limit_price: number
     trade_type: string
 }) => {
-    return api.post('/limit_orders', data)
+    return api.post('limit_orders', data)
 }
 
 // 撤销委托单
@@ -88,7 +88,7 @@ export const fetchSocialMetrics = (params?: {
     search?: string
     event_id?: number
 }) => {
-    return api.get('/social_metrics', { params })
+    return api.get('social_metrics', { params })
 }
 
 // 创建社交指标
@@ -98,7 +98,7 @@ export const createSocialMetric = (data: {
     mentions: number
     sentiment_type: boolean
     sentiment_intensity: number
-}) => api.post('/social_metrics', data)
+}) => api.post('social_metrics', data)
 
 // 修改社交指标
 export const updateSocialMetric = (id: number, data: any) =>

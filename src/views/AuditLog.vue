@@ -36,7 +36,7 @@ onMounted(() => {
     <el-table :data="auditlogs" style="width: 100%" v-loading="loading">
       <el-table-column prop="id" label="ID" width="60"></el-table-column>
       <el-table-column prop="user_name" label="User Name"></el-table-column>
-      <el-table-column prop="description" label="Description"></el-table-column>
+      <el-table-column prop="action" label="Action/Description"></el-table-column>
       <el-table-column prop="optime" label="Optime"></el-table-column>
     </el-table>
   </div>

@@ -130,3 +130,54 @@ export const createInvestmentPlan = (data: {
 
 // 删除投资计划
 export const deleteInvestmentPlan = (id: number) => api.delete(`/investment_plans/${id}`)
+
+//****************************交易窗口（时序分段）****************************
+// 获取交易窗口列表
+export const fetchTradeWindows = (params?: {
+    page?: number
+    pageSize?: number
+    search?: string
+    window_type?: string
+    enabled_only?: string
+}) => api.get('trade_windows', { params })
+
+// 创建交易窗口
+export const createTradeWindow = (data: any) => api.post('trade_windows', data)
+
+// 获取交易窗口详情
+export const fetchTradeWindowDetail = (id: number) => api.get(`trade_windows/${id}`)
+
+// 更新交易窗口
+export const updateTradeWindow = (id: number, data: any) => api.put(`trade_windows/${id}`, data)
+
+// 删除交易窗口
+export const deleteTradeWindow = (id: number) => api.delete(`trade_windows/${id}`)
+
+// 冲突预检
+export const checkTradeWindowConflict = (data: {
+    time_start: string
+    time_end: string
+    weekdays?: number[]
+    exclude_id?: number
+}) => api.post('trade_windows/conflict_check', data)
+
+// 获取当前活跃窗口
+export const fetchActiveWindows = () => api.get('trade_windows/active')
+
+// 获取路由决策
+export const fetchRouteDecision = (mode?: string) =>
+    api.get('trade_windows/route', { params: { mode } })
+
+// 获取窗口策略绑定
+export const fetchWindowBindings = (windowId: number) =>
+    api.get(`trade_windows/${windowId}/bindings`)
+
+// 绑定策略到窗口
+export const bindTemplateToWindow = (windowId: number, data: {
+    template_id: number
+    priority_override?: number
+}) => api.post(`trade_windows/${windowId}/bindings`, data)
+
+// 解绑策略
+export const unbindTemplateFromWindow = (windowId: number, templateId: number) =>
+    api.delete(`trade_windows/${windowId}/bindings/${templateId}`)

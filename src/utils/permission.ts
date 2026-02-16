@@ -10,7 +10,7 @@ export const createPermission = (data:
   {  
     name: string; 
     description: string;
-}) =>api.post('/permissions', data)
+}) =>api.post('permissions', data)
 //删除权限 API
 export const deletePermission = (id: number) => api.delete(`/permissions/${id}`)
 

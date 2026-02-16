@@ -90,7 +90,8 @@ const saveNotificationSettings = () => {
           <el-menu-item index="/index/usermgm">用户管理</el-menu-item>
           <el-menu-item index="/index/role">权限组管理</el-menu-item>
           <el-menu-item index="/index/permission">权限管理</el-menu-item>
-          <el-menu-item index="/index/auditlog">系统日志</el-menu-item>
+          <el-menu-item index="/index/systemlog">系统日志</el-menu-item>
+          <el-menu-item index="/index/auditlog">审计日志</el-menu-item>
           <el-menu-item index="/index/process">系统后台任务</el-menu-item>
           <el-menu-item index="/index/notification">通知设置</el-menu-item>
         </el-sub-menu>
@@ -102,6 +103,7 @@ const saveNotificationSettings = () => {
             <span>代币管理</span>
           </template>
           <el-menu-item index="/index/coin">代币列表</el-menu-item>
+          <el-menu-item index="/index/marketchart">行情图表</el-menu-item>
           <el-menu-item index="/index/cointype">代币类型</el-menu-item>
           <el-menu-item index="/index/ecosystem">代币链管理</el-menu-item>
           <el-menu-item index="/index/founder">创始团队信息</el-menu-item>

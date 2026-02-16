@@ -334,67 +334,67 @@ onMounted(loadTemplates)
                         <el-input-number v-model="cycle.days_max" :min="0" size="small" style="width: 90px;" />
                     </div>
                     <div style="display: flex; gap: 8px;">
-                        <el-button size="small" @click="addRule(ci)" :icon="Plus">添加类别</el-button>
-                        <el-button size="small" type="danger" @click="removeCycle(ci)" :icon="Delete" />
+                        <el-button size="small" @click="addRule(Number(ci))" :icon="Plus">添加类别</el-button>
+                        <el-button size="small" type="danger" @click="removeCycle(Number(ci))" :icon="Delete" />
                     </div>
                 </div>
 
                 <!-- 规则表格 -->
                 <el-table :data="cycle.rules" border size="small" style="width: 100%;">
-                    <el-table-column label="币种类别" width="120">
+                    <el-table-column label="币种类别" min-width="120">
                         <template #default="{ row }">
-                            <el-select v-model="row.coin_bucket" size="small" filterable allow-create placeholder="类别">
+                            <el-select v-model="row.coin_bucket" size="small" filterable allow-create placeholder="类别" style="width: 100%;">
                                 <el-option v-for="b in coinBuckets" :key="b" :label="b" :value="b" />
                             </el-select>
                         </template>
                     </el-table-column>
-                    <el-table-column label="买入区间(%)" min-width="140">
+                    <el-table-column label="买入区间(%)" min-width="100" align="center" header-align="center">
                         <template #default="{ row }">
                             <el-input size="small" :model-value="arrayToStr(row.buy_levels)"
                                 @change="(v: string) => row.buy_levels = strToArray(v)"
                                 placeholder="4.5, 6, 8" />
                         </template>
                     </el-table-column>
-                    <el-table-column label="止损(%)" width="90">
+                    <el-table-column label="止损(%)" min-width="90" align="center" header-align="center">
                         <template #default="{ row }">
                             <el-input-number v-model="row.stop_loss_pct" :min="0" :precision="1" size="small"
-                                controls-position="right" style="width: 80px;" />
+                                controls-position="right" style="width: 100%; max-width: 80px;" />
                         </template>
                     </el-table-column>
-                    <el-table-column label="观望区间(%)" width="150">
+                    <el-table-column label="观望区间(%)" min-width="280" align="center" header-align="center">
                         <template #default="{ row }">
-                            <div style="display: flex; gap: 4px; align-items: center;">
+                            <div style="display: flex; gap: 8px; align-items: center; justify-content: center;">
                                 <el-input-number v-model="row.watch_range_min_pct" :min="0" :precision="1"
-                                    size="small" controls-position="right" style="width: 65px;" />
+                                    size="small" style="width: 110px; flex-shrink: 0;" />
                                 <span>~</span>
                                 <el-input-number v-model="row.watch_range_max_pct" :min="0" :precision="1"
-                                    size="small" controls-position="right" style="width: 65px;" />
+                                    size="small" style="width: 110px; flex-shrink: 0;" />
                             </div>
                         </template>
                     </el-table-column>
-                    <el-table-column label="反弹目标(%)" min-width="130">
+                    <el-table-column label="反弹目标(%)" min-width="100" align="center" header-align="center">
                         <template #default="{ row }">
                             <el-input size="small" :model-value="arrayToStr(row.rebound_targets)"
                                 @change="(v: string) => row.rebound_targets = strToArray(v)"
                                 placeholder="1.5, 3, 5" />
                         </template>
                     </el-table-column>
-                    <el-table-column label="波动系数" width="90">
+                    <el-table-column label="波动系数" min-width="90" align="center" header-align="center">
                         <template #default="{ row }">
                             <el-input-number v-model="row.volatility_factor" :min="0.1" :step="0.1" :precision="1"
-                                size="small" controls-position="right" style="width: 80px;" />
+                                size="small" controls-position="right" style="width: 100%; max-width: 80px;" />
                         </template>
                     </el-table-column>
-                    <el-table-column label="优先级" width="80">
+                    <el-table-column label="优先级" min-width="80" align="center" header-align="center">
                         <template #default="{ row }">
                             <el-input-number v-model="row.priority" :min="1" size="small"
-                                controls-position="right" style="width: 65px;" />
+                                controls-position="right" style="width: 100%; max-width: 65px;" />
                         </template>
                     </el-table-column>
-                    <el-table-column label="" width="50" align="center">
+                    <el-table-column label="" width="60" align="center">
                         <template #default="{ $index }">
                             <el-button size="small" type="danger" :icon="Delete" circle
-                                @click="removeRule(ci, $index)" />
+                                @click="removeRule(Number(ci), $index)" />
                         </template>
                     </el-table-column>
                 </el-table>
