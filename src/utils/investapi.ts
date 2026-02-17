@@ -181,3 +181,82 @@ export const bindTemplateToWindow = (windowId: number, data: {
 // 解绑策略
 export const unbindTemplateFromWindow = (windowId: number, templateId: number) =>
     api.delete(`trade_windows/${windowId}/bindings/${templateId}`)
+
+//****************************自动交易配置****************************
+// 获取自动交易配置列表
+export const fetchAutoTradeConfigs = (params?: {
+    page?: number
+    pageSize?: number
+    trade_type_id?: number
+}) => api.get('auto_trade_configs', { params })
+
+// 创建自动交易配置
+export const createAutoTradeConfig = (data: any) => api.post('auto_trade_configs', data)
+
+// 获取自动交易配置详情
+export const fetchAutoTradeConfigDetail = (id: number) => api.get(`auto_trade_configs/${id}`)
+
+// 更新自动交易配置
+export const updateAutoTradeConfig = (id: number, data: any) => api.put(`auto_trade_configs/${id}`, data)
+
+// 删除自动交易配置
+export const deleteAutoTradeConfig = (id: number) => api.delete(`auto_trade_configs/${id}`)
+
+// 启停自动交易配置
+export const toggleAutoTradeConfig = (id: number, enabled: boolean) =>
+    api.post(`auto_trade_configs/${id}/toggle`, { enabled })
+
+// 恢复风控暂停
+export const resumeAutoTradeConfig = (id: number) => api.post(`auto_trade_configs/${id}/resume`)
+
+// 获取配置的策略绑定列表
+export const fetchAutoTradeBindings = (configId: number) =>
+    api.get(`auto_trade_configs/${configId}/bindings`)
+
+// 添加策略绑定
+export const addAutoTradeBinding = (configId: number, data: {
+    template_id: number
+    weight?: number
+    enabled?: boolean
+    priority?: number
+}) => api.post(`auto_trade_configs/${configId}/bindings`, data)
+
+// 更新策略绑定
+export const updateAutoTradeBinding = (configId: number, bindingId: number, data: {
+    weight?: number
+    enabled?: boolean
+    priority?: number
+}) => api.put(`auto_trade_configs/${configId}/bindings/${bindingId}`, data)
+
+// 删除策略绑定
+export const deleteAutoTradeBinding = (configId: number, bindingId: number) =>
+    api.delete(`auto_trade_configs/${configId}/bindings/${bindingId}`)
+
+// 获取风控实时指标
+export const fetchRiskStatus = (configId: number) =>
+    api.get(`auto_trade_configs/${configId}/risk_status`)
+
+// 获取熔断事件历史
+export const fetchCircuitEvents = (configId: number, params?: {
+    page?: number
+    pageSize?: number
+    event_type?: string
+}) => api.get(`auto_trade_configs/${configId}/circuit_events`, { params })
+
+//****************************回测****************************
+// 获取所有币种
+export const fetchAllCoins = () => api.get('coins_all')
+
+// 运行策略回测
+export const runBacktest = (data: {
+    template_id: number
+    coin_ids: number[]
+    start_date: string
+    end_date: string
+    initial_capital?: number
+    experiments?: Array<{
+        name: string
+        buy_level_multiplier?: number
+        stop_loss_multiplier?: number
+    }>
+}) => api.post('backtests', data)

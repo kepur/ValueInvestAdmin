@@ -149,6 +149,8 @@ const saveNotificationSettings = () => {
           <el-menu-item index="/index/simulationtrade">模拟交易</el-menu-item>
           <el-menu-item index="/index/realtrade">实盘交易</el-menu-item>
           <el-menu-item index="/index/transactionhistory">交易记录</el-menu-item>
+          <el-menu-item index="/index/autotrade">自动交易配置</el-menu-item>
+          <el-menu-item index="/index/backtest">策略回测</el-menu-item>
         </el-sub-menu>
         </el-menu>
       </div>

@@ -99,6 +99,18 @@ export const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
+          path: 'autotrade',
+          name: 'autotrade',
+          component: () => import('../views/tread/AutoTradeConsoleView.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
+          path: 'backtest',
+          name: 'backtest',
+          component: () => import('../views/tread/BacktestView.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
           path: 'investmentinsitution',
           name: 'investmentinsitution',
           component: () => import('../views/coininfo/InvestmentInstitutionView.vue'),
