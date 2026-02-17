@@ -15,6 +15,7 @@ import {
     fetchStrategyTemplates,
     fetchRiskStatus,
     fetchCircuitEvents,
+    fetchTradeWindows,
 } from '@/utils/investapi'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
@@ -51,6 +52,8 @@ const defaultForm = () => ({
     auto_resume_minutes: 0,
     cooldown_capital_pct: 50.0,
     cooldown_minutes: 30,
+    // T-0516: 窗口绑定（可选）
+    window_id: null as number | null,
 })
 const formData = ref<any>(defaultForm())
 
@@ -62,6 +65,10 @@ const bindings = ref<any[]>([])
 const allTemplates = ref<any[]>([])
 const templateMap = ref<Record<number, string>>({})
 const newBinding = ref({ template_id: null as number | null, weight: 1.0, priority: 100 })
+
+// ── T-0516: 交易窗口列表 ──
+const tradeWindows = ref<any[]>([])
+const windowMap = ref<Record<number, string>>({})
 
 // ── T-0513: 风控指标弹窗 ──
 const riskDialogVisible = ref(false)
@@ -155,6 +162,8 @@ const openEdit = async (row: any) => {
             auto_resume_minutes: d.auto_resume_minutes ?? 0,
             cooldown_capital_pct: d.cooldown_capital_pct ?? 50,
             cooldown_minutes: d.cooldown_minutes ?? 30,
+            // T-0516: 窗口绑定
+            window_id: d.window_id || null,
         }
         editorVisible.value = true
     } catch {
@@ -325,8 +334,22 @@ const loadEvents = async () => {
     }
 }
 
+// ── T-0516: 加载交易窗口列表 ──
+const loadTradeWindows = async () => {
+    try {
+        const res = await fetchTradeWindows({ pageSize: 200, enabled_only: 'true' })
+        tradeWindows.value = res.data.data || []
+        const map: Record<number, string> = {}
+        for (const w of tradeWindows.value) map[w.id] = w.name
+        windowMap.value = map
+    } catch {
+        ElMessage.error('加载交易窗口列表失败')
+    }
+}
+
 onMounted(() => {
     loadConfigs()
+    loadTradeWindows()
 })
 </script>
 
@@ -495,6 +518,16 @@ onMounted(() => {
                         </el-form-item>
                     </el-col>
                 </el-row>
+
+                <!-- T-0516: 交易窗口绑定 -->
+                <el-divider content-position="left">交易窗口绑定</el-divider>
+
+                <el-form-item label="绑定窗口">
+                    <el-select v-model="formData.window_id" placeholder="不绑定(使用全局窗口)" clearable style="width: 100%;">
+                        <el-option v-for="w in tradeWindows" :key="w.id" :label="w.name" :value="w.id" />
+                    </el-select>
+                    <div style="font-size: 11px; color: #999;">配置级别的交易窗口绑定，不设置则使用全局用户窗口状态</div>
+                </el-form-item>
             </el-form>
 
             <template #footer>

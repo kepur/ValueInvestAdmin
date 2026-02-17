@@ -502,7 +502,7 @@ onMounted(() => {
                     <el-col :span="16">
                         <el-form-item label="工作日">
                             <el-checkbox-group v-model="formData.weekdays">
-                                <el-checkbox-button v-for="(lbl, day) in weekdayLabels" :key="day" :value="day">
+                                <el-checkbox-button v-for="(lbl, day) in weekdayLabels" :key="day" :value="Number(day)">
                                     周{{ lbl }}
                                 </el-checkbox-button>
                             </el-checkbox-group>

@@ -26,7 +26,16 @@ const updateChart = () => {
         item.low,
         item.high
     ])
-    const categoryData = props.data.map(item => item.time_label || new Date(item.timestamp * 1000).toLocaleString())
+    const categoryData = props.data.map(item => {
+        if (item.time_label) return item.time_label
+        // 如果虽然是数字但看起来像毫秒(大于 1e11)，则不乘以1000
+        if (typeof item.timestamp === 'number') {
+             const ts = item.timestamp > 1e11 ? item.timestamp : item.timestamp * 1000
+             return new Date(ts).toLocaleString()
+        }
+        //如果是字符串直接返回
+        return item.timestamp
+    })
 
     const option = {
         title: {
