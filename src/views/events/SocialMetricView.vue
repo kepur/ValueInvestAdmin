@@ -291,17 +291,27 @@ onBeforeUnmount(() => {
     </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
+/* T-0305 高密度页面自适应 */
 .metric-view {
     display: flex;
+    flex-wrap: wrap;
     gap: 12px;
-    height: calc(100vh - 120px);
+    height: auto;
+    min-height: calc(100vh - 120px);
     padding: 4px;
+}
+
+@include respond-md {
+    .metric-view {
+        flex-direction: column;
+    }
 }
 
 .left-panel {
     width: 340px;
-    min-width: 340px;
+    min-width: 280px;
+    flex: 0 1 auto;
     display: flex;
     flex-direction: column;
     background: #fafafa;
@@ -310,10 +320,23 @@ onBeforeUnmount(() => {
     border: 1px solid #ebeef5;
 }
 
+@include respond-md {
+    .left-panel {
+        width: 100%;
+        min-width: 0;
+        max-height: 40vh;
+    }
+}
+
 .right-panel {
     flex: 1;
-    overflow-y: auto;
     min-width: 0;
+    overflow-x: auto;
+    overflow-y: auto;
+}
+
+.right-panel :deep(.el-table) {
+    min-width: 600px;
 }
 
 .mini-task {

@@ -1,6 +1,6 @@
 import api from './api'
-export const fetchAuditLogs=()=>{
-    return api.get('auditlogs')
+export const fetchAuditLogs = (params?: { keyword?: string; page?: number; page_size?: number }) => {
+    return api.get('auditlogs', { params })
 }
 
 export const fetchSystemProcessStatus = () => {

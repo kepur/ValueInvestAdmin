@@ -34,8 +34,12 @@ export const triggerKlineAggregate = (params?: {
     lookback_hours?: number
 }) => cronApi.post('tasks/aggregate_kline', params || {})
 
+/** 手动触发窗口调度检查（时序分段） */
+export const triggerWindowSchedule = () => cronApi.post('tasks/window_schedule/trigger')
+
 // ── WebSocket 连接 ──
 
+/** T-0213 与 Cron 任务日志协议一致 */
 export interface TaskLogMessage {
     type: 'task_started' | 'task_log' | 'task_finished'
     task_id?: string
@@ -48,6 +52,7 @@ export interface TaskLogMessage {
     timestamp?: string
     status?: string
     result?: any
+    source?: string
     extra?: any
 }
 

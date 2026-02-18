@@ -319,13 +319,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
   fetchStrategyTemplates,
   fetchAllCoins,
   runBacktest,
 } from '@/utils/investapi'
+
+const route = useRoute()
 
 interface Config {
   template_id: number | null
@@ -375,10 +378,15 @@ async function initializeData() {
     ])
     templates.value = templatesRes.data || []
     coins.value = coinsRes.data || []
+    // 从 URL 参数预选模板
+    const tid = route.query.template_id
+    if (tid) config.value.template_id = Number(tid)
   } catch (error) {
     ElMessage.error('加载数据失败')
   }
 }
+
+onMounted(initializeData)
 
 function onTemplateChange() {
   // Reset when template changes
@@ -497,6 +505,8 @@ initializeData()
 
 .chart-container {
   min-height: 400px;
+  overflow-x: auto;
+  min-width: 0;
 }
 
 .card-header {
@@ -515,5 +525,13 @@ initializeData()
 .negative {
   color: #f56c6c;
   font-weight: bold;
+}
+
+/* T-0414 全站自适应收口：配置区小屏换行 */
+@media (max-width: 1024px) {
+  .backtest-view :deep(.el-col) {
+    max-width: 100%;
+    flex: 0 0 100%;
+  }
 }
 </style>

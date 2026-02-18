@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { fetchPortfolioAnalysis } from '@/utils/investapi'
-import { ElMessage } from 'element-plus'
+import { resetSimulation } from '@/utils/tradapi'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const portfolioData = ref<any>(null)
 const loading = ref(false)
@@ -16,6 +17,17 @@ const loadPortfolio = async () => {
     ElMessage.error('获取投资组合数据失败')
   } finally {
     loading.value = false
+  }
+}
+
+const handleReset = async () => {
+  try {
+    await ElMessageBox.confirm('确定要清空模拟盘所有数据吗？此操作不可恢复！', '模拟盘清零', { type: 'warning' })
+    await resetSimulation()
+    ElMessage.success('模拟盘已清零')
+    loadPortfolio()
+  } catch (e: any) {
+    if (e !== 'cancel') ElMessage.error('清零失败')
   }
 }
 
@@ -38,6 +50,7 @@ onMounted(() => {
         <el-radio-button value="real">实盘</el-radio-button>
       </el-radio-group>
       <el-button type="primary" @click="loadPortfolio">刷新</el-button>
+      <el-button v-if="tradeType === 'simulation'" type="danger" @click="handleReset">清零模拟盘</el-button>
     </div>
 
     <div v-if="portfolioData" v-loading="loading">

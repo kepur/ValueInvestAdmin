@@ -262,17 +262,29 @@ onMounted(() => {
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .strategy-container {
   padding: 20px;
+  overflow-x: auto;
 }
 h1 {
   margin-bottom: 20px;
 }
 .toolbar {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 20px;
   align-items: center;
+}
+/* T-0305 表格横向滚动、弹窗小屏自适应 */
+.strategy-container :deep(.el-table) {
+  min-width: 900px;
+}
+@include respond-md {
+  .strategy-container :deep(.el-dialog) {
+    width: 90% !important;
+    max-width: 600px;
+  }
 }
 </style>

@@ -179,21 +179,32 @@ onMounted(async () => {
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .history-container {
   padding: 20px;
+  overflow-x: auto;
 }
 .section-card {
   margin-bottom: 20px;
 }
 .card-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
 }
 .filter-bar {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   align-items: center;
+}
+/* T-0305 表格横向滚动 */
+.history-container :deep(.el-table) {
+  min-width: 700px;
+}
+@include respond-sm {
+  .filter-bar .el-select { width: 100% !important; max-width: 220px; }
 }
 </style>

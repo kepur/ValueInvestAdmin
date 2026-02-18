@@ -27,6 +27,7 @@ const institutionInfoKeyword = ref('');
 
 const messages = ref<Message[]>([]);
 const newMessage = ref('');
+const isConnected = ref(false);
 
 let recommendation_socket: ReturnType<typeof createRecommendationSocket> | null = null;
 
@@ -126,11 +127,13 @@ onMounted(() => {
   recommendation_socket = createRecommendationSocket({
     onConnect: () => {
       console.log('Recommendation Socket connected');
+      isConnected.value = true;
       messages.value.push({ role: 'assistant', content: 'WebSocket 已连接，准备就绪。' });
     },
     onMessage: handleChatResponse,
     onDisconnect: () => {
       console.log('Recommendation Socket disconnected');
+      isConnected.value = false;
       messages.value.push({ role: 'assistant', content: 'WebSocket 已断开。' });
     },
     onError: (error) => {
@@ -206,7 +209,12 @@ onMounted(() => {
     <div class="container-right">
       <!-- WebSocket 日志信息框 -->
       <div class="websocket-log-box">
-        <h3>WebSocket 日志信息</h3>
+        <div class="log-header">
+          <h3>WebSocket 日志信息</h3>
+          <el-tag :type="isConnected ? 'success' : 'danger'" size="small">
+            {{ isConnected ? '已连接' : '已断开' }}
+          </el-tag>
+        </div>
         <div class="chat-messages">
           <div v-for="msg,index in messages" :key="index" :class="['message', msg.role]">
             <p class="content">{{ msg.content }}</p>
@@ -217,24 +225,52 @@ onMounted(() => {
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
+/* T-0305 高密度页面自适应 */
 .container {
   display: flex;
-  height: 100vh;
+  flex-wrap: wrap;
+  min-height: 100vh;
+  height: auto;
+}
+
+@media (max-width: 1024px) {
+  .container {
+    flex-direction: column;
+  }
 }
 
 .container-left {
-  width: 700px;
-  height: 500px;
+  width: 100%;
+  max-width: 700px;
+  min-height: 320px;
   padding: 20px;
   border-right: 1px solid #ccc;
 }
 
+@media (max-width: 1024px) {
+  .container-left {
+    max-width: none;
+    border-right: none;
+    border-bottom: 1px solid #ccc;
+  }
+}
+
 .container-right {
   flex: 1;
+  min-width: 0;
   padding: 20px;
   display: flex;
   flex-direction: column;
+}
+
+@media (max-width: 768px) {
+  .function-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .label { width: 100%; }
+  .input { width: 100%; max-width: 200px; }
 }
 
 h1 {
@@ -283,10 +319,17 @@ h1 {
 }
 
 .websocket-log-box h3 {
-  margin-bottom: 10px;
+  margin-bottom: 0;
   font-size: 16px;
-  border-bottom: 1px solid #555;
   padding-bottom: 5px;
+}
+
+.log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #555;
 }
 
 .chat-messages {

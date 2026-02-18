@@ -81,6 +81,12 @@ export const deleteStrategyTemplate = (id: number) => api.delete(`strategy_templ
 // 校验策略模板参数
 export const validateStrategyTemplate = (data: any) => api.post('strategy_templates/validate', data)
 
+// T-0108: 策略模板版本历史与回滚
+export const fetchStrategyTemplateVersions = (templateId: number) =>
+    api.get(`strategy_templates/${templateId}/versions`)
+export const rollbackStrategyTemplate = (templateId: number, version: number) =>
+    api.post(`strategy_templates/${templateId}/rollback`, { version })
+
 //****************************投资组合分析****************************
 // 获取投资组合分析
 export const fetchPortfolioAnalysis = (params?: {
@@ -260,3 +266,16 @@ export const runBacktest = (data: {
         stop_loss_multiplier?: number
     }>
 }) => api.post('backtests', data)
+
+// 策略执行日志 (T-0109)
+export const fetchStrategyExecutionLogs = (params?: {
+    config_id?: number
+    template_id?: number
+    coin_symbol?: string
+    trigger_type?: string
+    status?: string
+    start_date?: string
+    end_date?: string
+    page?: number
+    page_size?: number
+}) => api.get('strategy_execution_logs', { params })

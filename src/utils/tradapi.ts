@@ -26,6 +26,16 @@ export const updateWallet = (data: {
     return api.post('wallet/update', data)
 }
 
+// 模拟盘清零
+export const resetSimulation = () => {
+    return api.post('wallet/simulation_reset')
+}
+
+// 同步实盘余额
+export const syncWalletBalance = () => {
+    return api.post('wallet/sync')
+}
+
 // 执行买入/卖出交易
 export const executeTrade = (data: {
     coin_id: number

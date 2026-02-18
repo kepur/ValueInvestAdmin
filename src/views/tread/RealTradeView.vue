@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { fetchWalletBalance, updateWallet, executeTrade, fetchTradeRecords, fetchUserAssets } from '@/utils/tradapi'
+import { fetchWalletBalance, executeTrade, fetchTradeRecords, fetchUserAssets } from '@/utils/tradapi'
 import { fetchRealTimePrice } from '@/utils/priceapi'
 import { fetchAllCoins } from '@/utils/coinapi'
 
@@ -9,9 +9,6 @@ const TRADE_TYPE = 'real'
 
 // 钱包
 const walletBalance = ref(0)
-const walletDialogVisible = ref(false)
-const walletAction = ref<'deposit' | 'withdraw'>('deposit')
-const walletAmount = ref(100)
 
 // 实时价格 + 币种列表
 const marketPrices = ref<any[]>([])
@@ -110,29 +107,14 @@ const refreshAll = () => {
   loadRecords()
 }
 
-// 充值/提现弹窗
-const openWalletDialog = (action: 'deposit' | 'withdraw') => {
-  walletAction.value = action
-  walletAmount.value = 100
-  walletDialogVisible.value = true
-}
-
-const submitWallet = async () => {
-  if (walletAmount.value <= 0) {
-    ElMessage.warning('金额必须大于0')
-    return
-  }
+const handleSyncBalance = async () => {
   try {
-    await updateWallet({
-      amount: walletAmount.value,
-      transaction_type: walletAction.value,
-      trade_type: TRADE_TYPE,
-    })
-    ElMessage.success(walletAction.value === 'deposit' ? '充值成功' : '提现成功')
-    walletDialogVisible.value = false
+    const { syncWalletBalance } = await import('@/utils/tradapi')
+    await syncWalletBalance()
+    ElMessage.success('同步成功')
     refreshAll()
   } catch (e: any) {
-    ElMessage.error(e.response?.data?.error || '操作失败')
+    ElMessage.error(e.response?.data?.error || '同步失败')
   }
 }
 
@@ -210,11 +192,17 @@ onMounted(async () => {
         <div class="card-header">
           <span>实盘钱包</span>
           <div>
-            <el-button type="success" size="small" @click="openWalletDialog('deposit')">充值</el-button>
-            <el-button type="warning" size="small" @click="openWalletDialog('withdraw')">提现</el-button>
+            <el-button type="info" size="small" @click="handleSyncBalance">同步交易所余额</el-button>
           </div>
         </div>
       </template>
+      <el-alert
+        title="实盘充值/提现请在交易所完成，本系统仅同步余额，不托管资金。"
+        type="info"
+        :closable="false"
+        show-icon
+        style="margin-bottom: 12px;"
+      />
       <div class="wallet-info">
         <div class="wallet-item">
           <span class="wallet-label">现金余额</span>
@@ -320,23 +308,6 @@ onMounted(async () => {
         style="margin-top: 16px;"
       />
     </el-card>
-
-    <!-- 充值/提现弹窗 -->
-    <el-dialog
-      :title="walletAction === 'deposit' ? '实盘充值' : '实盘提现'"
-      v-model="walletDialogVisible"
-      width="400px"
-    >
-      <el-form label-width="80px">
-        <el-form-item label="金额 ($)">
-          <el-input-number v-model="walletAmount" :min="0.01" :precision="2" :step="100" style="width: 100%;" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="walletDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitWallet">确定</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 

@@ -111,6 +111,12 @@ export const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
+          path: 'exchange-credential',
+          name: 'exchangeCredential',
+          component: () => import('../views/user/ExchangeCredentialView.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
           path: 'investmentinsitution',
           name: 'investmentinsitution',
           component: () => import('../views/coininfo/InvestmentInstitutionView.vue'),
@@ -145,6 +151,12 @@ export const router = createRouter({
           path: 'strategytemplate',
           name: 'strategytemplate',
           component: () => import('../views/invest/StrategyTemplateView.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
+          path: 'strategyexecutionlog',
+          name: 'strategyexecutionlog',
+          component: () => import('../views/invest/StrategyExecutionLogView.vue'),
           meta: { requiresAuth: true }
         },
         {
@@ -229,6 +241,12 @@ export const router = createRouter({
           path: 'assistant',
           name: 'assistant',
           component: () => import('../views/AiAssistant.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
+          path: 'gates',
+          name: 'gates',
+          component: () => import('@/views/ops/GateDashboardView.vue'),
           meta: { requiresAuth: true }
         },
       ]

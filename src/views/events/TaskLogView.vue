@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import {
     fetchTaskStatus,
     fetchTaskLogs,
@@ -11,8 +11,18 @@ import {
     type TaskLogMessage,
 } from '@/utils/tasklogapi'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import axios from 'axios'
+import { baseURL } from '@/config/baseConfig'
+import { useAuthStore } from '@/stores/auth'
+import { storeToRefs } from 'pinia'
 
-// ── 状态 ──
+const authStore = useAuthStore()
+const { token } = storeToRefs(authStore)
+
+// ── Tab 切换 ──
+const activeTab = ref('task')
+
+// ── 计划任务日志状态 ──
 const tasks = ref<any[]>([])
 const selectedTaskId = ref<string>('')
 const logs = ref<any[]>([])
@@ -20,6 +30,38 @@ const wsConnected = ref(false)
 const wsInstance = ref<WebSocket | null>(null)
 const logContainer = ref<HTMLElement | null>(null)
 const triggering = ref<string>('')
+
+// ── 系统日志状态 ──
+const systemLogs = ref<any[]>([])
+const sysLoading = ref(false)
+const sysFilter = ref({ level: '', module: '', keyword: '', limit: 100 })
+const sysModules = [
+    { label: '全部模块', value: '' },
+    { label: '价格同步', value: 'price_sync' },
+    { label: 'K线聚合', value: 'kline_aggregate' },
+    { label: '新闻采集', value: 'news_collect' },
+    { label: '情绪计算', value: 'sentiment_calc' },
+    { label: '自动交易', value: 'auto_trade' },
+]
+const sysLevels = [
+    { label: '全部级别', value: '' },
+    { label: 'INFO', value: 'INFO' },
+    { label: 'WARN', value: 'WARN' },
+    { label: 'ERROR', value: 'ERROR' },
+]
+
+// ── 加载系统日志 ──
+const loadSystemLogs = async () => {
+    sysLoading.value = true
+    try {
+        const res = await axios.get(`${baseURL}system_log`, {
+            params: sysFilter.value,
+            headers: { Authorization: `Bearer ${token.value}` },
+        })
+        systemLogs.value = res.data.logs || []
+    } catch { systemLogs.value = [] }
+    finally { sysLoading.value = false }
+}
 
 // ── 加载任务列表 ──
 const loadTasks = async () => {
@@ -35,7 +77,6 @@ const loadTasks = async () => {
 const selectTask = async (taskId: string) => {
     selectedTaskId.value = taskId
     logs.value = []
-    // 加载历史日志
     try {
         const res = await fetchTaskLogs(taskId)
         if (res.data?.data?.logs) {
@@ -148,9 +189,15 @@ const formatTime = (ts: string) => {
     } catch { return ts }
 }
 
+const sysLevelTagType = (level: string) => {
+    const map: any = { INFO: 'info', WARN: 'warning', ERROR: 'danger' }
+    return map[level] || 'info'
+}
+
 onMounted(() => {
     loadTasks()
     connectWS()
+    loadSystemLogs()
 })
 
 onBeforeUnmount(() => {
@@ -160,84 +207,86 @@ onBeforeUnmount(() => {
 
 <template>
     <div class="task-log-view">
-        <!-- 顶部操作栏 -->
-        <el-card shadow="never" style="margin-bottom: 12px;">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <el-button type="primary" @click="handleTrigger('news')" :loading="triggering === 'news'">
-                        触发新闻采集
-                    </el-button>
-                    <el-button type="warning" @click="handleTrigger('sentiment')" :loading="triggering === 'sentiment'">
-                        触发情绪计算
-                    </el-button>
-                    <el-button type="success" @click="handleTrigger('coininfo')" :loading="triggering === 'coininfo'">
-                        触发代币抓取
-                    </el-button>
-                    <el-button type="info" @click="handleTrigger('kline')" :loading="triggering === 'kline'">
-                        触发K线聚合
-                    </el-button>
-                    <el-button @click="loadTasks">刷新列表</el-button>
+        <el-tabs v-model="activeTab" type="border-card">
+            <!-- Tab 1: 计划任务日志 -->
+            <el-tab-pane label="计划任务日志" name="task">
+                <!-- 顶部操作栏 -->
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <el-button type="primary" size="small" @click="handleTrigger('news')" :loading="triggering === 'news'">新闻采集</el-button>
+                        <el-button type="warning" size="small" @click="handleTrigger('sentiment')" :loading="triggering === 'sentiment'">情绪计算</el-button>
+                        <el-button type="success" size="small" @click="handleTrigger('coininfo')" :loading="triggering === 'coininfo'">代币抓取</el-button>
+                        <el-button type="info" size="small" @click="handleTrigger('kline')" :loading="triggering === 'kline'">K线聚合</el-button>
+                        <el-button size="small" @click="loadTasks">刷新</el-button>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span :style="{ color: wsConnected ? '#67c23a' : '#f56c6c', fontSize: '18px' }">●</span>
+                        <span style="font-size: 12px; color: #999;">{{ wsConnected ? 'WS已连接' : 'WS未连接' }}</span>
+                        <el-button v-if="!wsConnected" size="small" @click="connectWS">重连</el-button>
+                    </div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span :style="{ color: wsConnected ? '#67c23a' : '#f56c6c', fontSize: '22px' }">●</span>
-                    <span style="font-size: 13px; color: #999;">
-                        {{ wsConnected ? 'WebSocket 已连接' : 'WebSocket 未连接' }}
-                    </span>
-                    <el-button v-if="!wsConnected" size="small" @click="connectWS">重连</el-button>
+                <!-- 主体：左侧任务列表 + 右侧日志流 -->
+                <div style="display: flex; gap: 12px; height: calc(100vh - 240px);">
+                    <el-card shadow="never" style="width: 320px; flex-shrink: 0; overflow-y: auto;">
+                        <template #header><span>任务列表</span></template>
+                        <div v-if="!tasks.length" style="text-align: center; color: #ccc; padding: 20px;">暂无任务记录</div>
+                        <div v-for="task in tasks" :key="task.task_id"
+                            :class="['task-item', { active: selectedTaskId === task.task_id }]"
+                            @click="selectTask(task.task_id)">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-weight: bold; font-size: 13px;">{{ task.task_name }}</span>
+                                <el-tag :type="statusType(task.status)" size="small">{{ statusLabel(task.status) }}</el-tag>
+                            </div>
+                            <div style="font-size: 11px; color: #999; margin-top: 4px;">{{ task.task_id }}</div>
+                            <el-progress v-if="task.status === 'running'" :percentage="task.progress || 0" :stroke-width="6" style="margin-top: 6px;" />
+                        </div>
+                    </el-card>
+                    <el-card shadow="never" style="flex: 1; display: flex; flex-direction: column;">
+                        <template #header>
+                            <span>实时日志 {{ selectedTaskId ? `— ${selectedTaskId}` : '' }}</span>
+                        </template>
+                        <div v-if="!selectedTaskId" style="text-align: center; color: #ccc; padding: 60px 0;">← 点击左侧任务查看日志</div>
+                        <div v-else ref="logContainer" class="log-container">
+                            <div v-for="(log, idx) in logs" :key="idx" class="log-line">
+                                <span class="log-time">{{ formatTime(log.timestamp) }}</span>
+                                <span class="log-level" :style="{ color: levelColor(log.level) }">[{{ (log.level || 'info').toUpperCase() }}]</span>
+                                <span v-if="log.stage" class="log-stage">{{ log.stage }}</span>
+                                <span class="log-msg">{{ log.message }}</span>
+                            </div>
+                            <div v-if="!logs.length" style="text-align: center; color: #ccc; padding: 40px;">等待日志...</div>
+                        </div>
+                    </el-card>
                 </div>
-            </div>
-        </el-card>
+            </el-tab-pane>
 
-        <!-- 主体：左侧任务列表 + 右侧日志流 -->
-        <div style="display: flex; gap: 12px; height: calc(100vh - 200px);">
-            <!-- 左侧：任务列表 -->
-            <el-card shadow="never" style="width: 360px; flex-shrink: 0; overflow-y: auto;">
-                <template #header><span>任务列表</span></template>
-                <div v-if="!tasks.length" style="text-align: center; color: #ccc; padding: 20px;">暂无任务记录</div>
-                <div v-for="task in tasks" :key="task.task_id"
-                    :class="['task-item', { active: selectedTaskId === task.task_id }]"
-                    @click="selectTask(task.task_id)">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-weight: bold; font-size: 13px;">{{ task.task_name }}</span>
-                        <el-tag :type="statusType(task.status)" size="small">{{ statusLabel(task.status) }}</el-tag>
-                    </div>
-                    <div style="font-size: 12px; color: #999; margin-top: 4px;">
-                        {{ task.task_id }}
-                    </div>
-                    <el-progress v-if="task.status === 'running'" :percentage="task.progress || 0"
-                        :stroke-width="6" style="margin-top: 6px;" />
-                    <div style="font-size: 11px; color: #bbb; margin-top: 4px;">
-                        {{ formatTime(task.started_at) }}
-                        <span v-if="task.finished_at"> → {{ formatTime(task.finished_at) }}</span>
-                    </div>
+            <!-- Tab 2: 系统日志 -->
+            <el-tab-pane label="系统日志" name="system">
+                <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+                    <el-select v-model="sysFilter.module" placeholder="模块" style="width: 140px;" size="small">
+                        <el-option v-for="m in sysModules" :key="m.value" :label="m.label" :value="m.value" />
+                    </el-select>
+                    <el-select v-model="sysFilter.level" placeholder="级别" style="width: 120px;" size="small">
+                        <el-option v-for="l in sysLevels" :key="l.value" :label="l.label" :value="l.value" />
+                    </el-select>
+                    <el-input v-model="sysFilter.keyword" placeholder="内容搜索" style="width: 160px;" size="small" clearable @keyup.enter="loadSystemLogs" />
+                    <el-input-number v-model="sysFilter.limit" :min="10" :max="500" size="small" style="width: 100px;" />
+                    <el-button type="primary" size="small" @click="loadSystemLogs" :loading="sysLoading">查询</el-button>
                 </div>
-            </el-card>
-
-            <!-- 右侧：日志流 -->
-            <el-card shadow="never" style="flex: 1; display: flex; flex-direction: column;">
-                <template #header>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>实时日志 {{ selectedTaskId ? `— ${selectedTaskId}` : '' }}</span>
-                        <el-button v-if="logs.length" size="small" @click="logs = []">清空</el-button>
-                    </div>
-                </template>
-                <div v-if="!selectedTaskId" style="text-align: center; color: #ccc; padding: 60px 0;">
-                    ← 点击左侧任务查看日志
-                </div>
-                <div v-else ref="logContainer" class="log-container">
-                    <div v-for="(log, idx) in logs" :key="idx" class="log-line">
-                        <span class="log-time">{{ formatTime(log.timestamp) }}</span>
-                        <span class="log-level" :style="{ color: levelColor(log.level) }">
-                            [{{ (log.level || 'info').toUpperCase() }}]
-                        </span>
-                        <span v-if="log.stage" class="log-stage">{{ log.stage }}</span>
-                        <span class="log-msg">{{ log.message }}</span>
-                        <span v-if="log.progress != null" class="log-progress">{{ log.progress }}%</span>
-                    </div>
-                    <div v-if="!logs.length" style="text-align: center; color: #ccc; padding: 40px;">等待日志...</div>
-                </div>
-            </el-card>
-        </div>
+                <el-table :data="systemLogs" v-loading="sysLoading" border stripe size="small" style="width: 100%;">
+                    <el-table-column prop="id" label="ID" width="60" />
+                    <el-table-column prop="timestamp" label="时间" width="160">
+                        <template #default="{ row }">{{ formatTime(row.timestamp) }}</template>
+                    </el-table-column>
+                    <el-table-column prop="level" label="级别" width="80">
+                        <template #default="{ row }">
+                            <el-tag :type="sysLevelTagType(row.level)" size="small">{{ row.level }}</el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="module" label="模块" width="120" />
+                    <el-table-column prop="message" label="消息" min-width="300" show-overflow-tooltip />
+                </el-table>
+            </el-tab-pane>
+        </el-tabs>
     </div>
 </template>
 

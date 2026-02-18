@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import {
     fetchStrategyTemplates,
     fetchStrategyTemplateDetail,
@@ -7,9 +8,17 @@ import {
     updateStrategyTemplate,
     deleteStrategyTemplate,
     validateStrategyTemplate,
+    fetchStrategyTemplateVersions,
+    rollbackStrategyTemplate,
 } from '@/utils/investapi'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Plus } from '@element-plus/icons-vue'
+import { Delete, Plus, DataAnalysis } from '@element-plus/icons-vue'
+
+const router = useRouter()
+
+const goBacktest = (id: number) => {
+    router.push({ path: '/index/backtest', query: { template_id: id } })
+}
 
 // ── 模板列表 ──
 const templates = ref<any[]>([])
@@ -220,6 +229,51 @@ const handleDelete = async (id: number) => {
     } catch {}
 }
 
+// ── T-0108 历史版本与回滚 ──
+const versionsVisible = ref(false)
+const versionsTemplateId = ref<number | null>(null)
+const versionsList = ref<{ id: number; template_id: number; version: number; created_at: string }[]>([])
+const versionsLoading = ref(false)
+const rollbackLoading = ref(false)
+
+const openVersions = async (id: number) => {
+    versionsTemplateId.value = id
+    versionsVisible.value = true
+    versionsLoading.value = true
+    try {
+        const res = await fetchStrategyTemplateVersions(id)
+        versionsList.value = res.data.data || []
+    } catch {
+        ElMessage.error('加载版本列表失败')
+    } finally {
+        versionsLoading.value = false
+    }
+}
+
+const currentVersion = computed(() => {
+    const row = templates.value.find((t: any) => t.id === versionsTemplateId.value)
+    return row?.version ?? null
+})
+
+const handleRollback = async (version: number) => {
+    if (versionsTemplateId.value == null) return
+    try {
+        await ElMessageBox.confirm(`确定回滚到版本 v${version}？当前内容将被该版本快照覆盖。`, '回滚确认', { type: 'warning' })
+        rollbackLoading.value = true
+        await rollbackStrategyTemplate(versionsTemplateId.value, version)
+        ElMessage.success('回滚成功')
+        versionsVisible.value = false
+        loadTemplates()
+        if (editingId.value === versionsTemplateId.value) {
+            openEdit(versionsTemplateId.value)
+        }
+    } catch (e: any) {
+        ElMessage.error(e.response?.data?.error || '回滚失败')
+    } finally {
+        rollbackLoading.value = false
+    }
+}
+
 onMounted(loadTemplates)
 </script>
 
@@ -241,7 +295,7 @@ onMounted(loadTemplates)
         <el-card shadow="never">
             <el-table :data="templates" stripe border>
                 <el-table-column prop="id" label="ID" width="60" />
-                <el-table-column prop="name" label="名称" min-width="180" />
+                <el-table-column prop="name" label="名称" min-width="200" show-overflow-tooltip />
                 <el-table-column label="状态" width="80" align="center">
                     <template #default="{ row }">
                         <el-tag :type="row.is_active ? 'success' : 'info'" size="small">
@@ -260,10 +314,14 @@ onMounted(loadTemplates)
                     <template #default="{ row }">v{{ row.version }}</template>
                 </el-table-column>
                 <el-table-column prop="updated_at" label="更新时间" width="160" />
-                <el-table-column label="操作" width="150" align="center">
+                <el-table-column label="操作" width="350" align="center" fixed="right">
                     <template #default="{ row }">
-                        <el-button size="small" type="primary" @click="openEdit(row.id)">编辑</el-button>
-                        <el-button size="small" type="danger" @click="handleDelete(row.id)">删除</el-button>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;">
+                            <el-button size="small" type="primary" @click="openEdit(row.id)">编辑</el-button>
+                            <el-button size="small" @click="openVersions(row.id)">历史版本</el-button>
+                            <el-button size="small" type="warning" :icon="DataAnalysis" @click="goBacktest(row.id)">回测</el-button>
+                            <el-button size="small" type="danger" @click="handleDelete(row.id)">删除</el-button>
+                        </div>
                     </template>
                 </el-table-column>
             </el-table>
@@ -407,6 +465,29 @@ onMounted(loadTemplates)
             <template #footer>
                 <el-button @click="editorVisible = false">取消</el-button>
                 <el-button type="primary" @click="handleSave" :loading="saving">保存</el-button>
+            </template>
+        </el-dialog>
+
+        <!-- 历史版本弹窗 T-0108 -->
+        <el-dialog v-model="versionsVisible" title="历史版本" width="520px" destroy-on-close>
+            <div v-if="currentVersion != null" style="margin-bottom: 12px; color: #666;">当前版本: v{{ currentVersion }}</div>
+            <el-table :data="versionsList" v-loading="versionsLoading" border size="small" max-height="320">
+                <el-table-column prop="version" label="版本" width="80">
+                    <template #default="{ row }">v{{ row.version }}</template>
+                </el-table-column>
+                <el-table-column prop="created_at" label="保存时间" />
+                <el-table-column label="操作" width="90" align="center">
+                    <template #default="{ row }">
+                        <el-button size="small" type="primary" :loading="rollbackLoading"
+                            :disabled="row.version === currentVersion"
+                            @click="handleRollback(row.version)">
+                            回滚
+                        </el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+            <template #footer>
+                <el-button @click="versionsVisible = false">关闭</el-button>
             </template>
         </el-dialog>
     </div>

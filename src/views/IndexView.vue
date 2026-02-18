@@ -39,11 +39,63 @@ const handleLogout = async () => {
 
 
 const notificationDialogVisible = ref(false);
+const profileDialogVisible = ref(false);
 
 // 通知类型和通知方式
 const notificationTypes = ['交易通知', '事件新闻', '鲸鱼买入'];
 const selectedNotificationTypes = ref<string[]>([]);
 const selectedNotificationMethods = ref<string[]>(['邮件']);
+
+// 用户信息编辑
+const userProfile = ref({
+  email: authStore.userEmail || '',
+  phone: '',
+  telegram: ''
+});
+
+// 打开用户信息编辑
+const openProfileEdit = async () => {
+  try {
+    const res = await fetch('/api/user/profile', {
+      headers: { 'Authorization': `Bearer ${authStore.token}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      userProfile.value = {
+        email: data.email || '',
+        phone: data.phone || '',
+        telegram: data.telegram_id || ''
+      };
+    }
+  } catch (e) { /* 使用默认值 */ }
+  profileDialogVisible.value = true;
+};
+
+// 保存用户信息
+const saveProfile = async () => {
+  try {
+    const res = await fetch('/api/user/profile', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authStore.token}`
+      },
+      body: JSON.stringify({
+        email: userProfile.value.email,
+        phone: userProfile.value.phone,
+        telegram_id: userProfile.value.telegram
+      })
+    });
+    if (res.ok) {
+      ElMessage.success('用户信息已更新');
+      profileDialogVisible.value = false;
+    } else {
+      ElMessage.error('更新失败');
+    }
+  } catch (e) {
+    ElMessage.error('网络错误');
+  }
+};
 
 // 打开通知设置
 const openNotificationSettings = () => {
@@ -87,13 +139,15 @@ const saveNotificationSettings = () => {
             <span>系统管理</span>
           </template>
           <el-menu-item index="/index/home">实时价格</el-menu-item>
-          <el-menu-item index="/index/usermgm">用户管理</el-menu-item>
-          <el-menu-item index="/index/role">权限组管理</el-menu-item>
+          <el-menu-item v-if="isAdmin" index="/index/usermgm">用户管理</el-menu-item>
+          <el-menu-item v-if="isAdmin" index="/index/role">权限组管理</el-menu-item>
           <el-menu-item index="/index/permission">权限管理</el-menu-item>
           <el-menu-item index="/index/systemlog">系统日志</el-menu-item>
           <el-menu-item index="/index/auditlog">审计日志</el-menu-item>
           <el-menu-item index="/index/process">系统后台任务</el-menu-item>
           <el-menu-item index="/index/notification">通知设置</el-menu-item>
+          <el-menu-item index="/index/gates">上线闸门</el-menu-item>
+          <el-menu-item index="/index/exchange-credential">交易所接入</el-menu-item>
         </el-sub-menu>
 
         <!-- Novels -->
@@ -135,6 +189,7 @@ const saveNotificationSettings = () => {
           <el-menu-item index="/index/timesegment">时序分段管理</el-menu-item>
           <el-menu-item index="/index/strategy">策略管理</el-menu-item>
           <el-menu-item index="/index/strategytemplate">策略模板</el-menu-item>
+          <el-menu-item index="/index/strategyexecutionlog">执行日志</el-menu-item>
           <el-menu-item index="/index/investmentallocation">投资比例管理</el-menu-item>
           <el-menu-item index="/index/portfolioanalysis">投资组合管理</el-menu-item>
         </el-sub-menu>
@@ -175,6 +230,7 @@ const saveNotificationSettings = () => {
               <el-icon><UserFilled /></el-icon>
               Admin
             </template>
+            <el-menu-item @click="openProfileEdit">用户信息编辑</el-menu-item>
             <el-menu-item @click="openNotificationSettings">通知设置</el-menu-item>
             <el-menu-item @click="handleLogout">退出登录</el-menu-item>
           </el-sub-menu>
@@ -199,18 +255,39 @@ const saveNotificationSettings = () => {
             <el-option v-for="type in notificationTypes" :key="type" :label="type" :value="type"></el-option>
           </el-select>
         </el-form-item>
-        <!-- 通知方式选择 -->
+        <!-- 通知方式选择（仅邮件与 Telegram，已移除短信） -->
         <el-form-item label="通知方式">
           <el-checkbox-group v-model="selectedNotificationMethods">
             <el-checkbox label="邮件"></el-checkbox>
             <el-checkbox label="Telegram"></el-checkbox>
-            <el-checkbox label="短信"></el-checkbox>
           </el-checkbox-group>
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="closeNotificationSettings">取消</el-button>
         <el-button type="primary" @click="saveNotificationSettings">确定</el-button>
+      </template>
+    </el-dialog>
+  <!-- 用户信息编辑弹窗 -->
+  <el-dialog
+      title="用户信息编辑"
+      v-model="profileDialogVisible"
+      width="400px"
+    >
+      <el-form label-width="80px">
+        <el-form-item label="邮箱">
+          <el-input v-model="userProfile.email" placeholder="请输入邮箱" />
+        </el-form-item>
+        <el-form-item label="手机号">
+          <el-input v-model="userProfile.phone" placeholder="请输入手机号" />
+        </el-form-item>
+        <el-form-item label="Telegram">
+          <el-input v-model="userProfile.telegram" placeholder="请输入 Telegram ID" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="profileDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveProfile">保存</el-button>
       </template>
     </el-dialog>
 </template>

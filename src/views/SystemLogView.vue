@@ -22,6 +22,7 @@ const logs = ref<SystemLog[]>([])
 const loading = ref(false)
 const filterLevel = ref('')
 const filterModule = ref('')
+const searchKeyword = ref('')
 const limit = ref(100)
 
 const modules = [
@@ -46,6 +47,7 @@ const loadLogs = async () => {
       params: {
         level: filterLevel.value,
         module: filterModule.value,
+        keyword: searchKeyword.value,
         limit: limit.value
       },
       headers: {
@@ -85,6 +87,7 @@ onMounted(() => {
         <el-select v-model="filterLevel" placeholder="选择级别" style="width: 150px">
           <el-option v-for="l in levels" :key="l.value" :label="l.label" :value="l.value" />
         </el-select>
+        <el-input v-model="searchKeyword" placeholder="内容搜索" style="width: 200px" clearable @keyup.enter="loadLogs" />
         <el-input-number v-model="limit" :min="10" :max="500" label="条数" style="width: 130px" />
         <el-button type="primary" @click="loadLogs" :loading="loading">查询日志</el-button>
       </div>

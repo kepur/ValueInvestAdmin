@@ -13,7 +13,6 @@ type NotificationRow = {
   label: string
   email: boolean
   telegram: boolean
-  sms: boolean
 }
 
 const loading = ref(false)
@@ -22,9 +21,9 @@ const testing = ref(false)
 const broadcasting = ref(false)
 
 const rows = ref<NotificationRow[]>([
-  { type: 'trade', label: '交易通知', email: false, telegram: false, sms: false },
-  { type: 'event', label: '事件新闻', email: false, telegram: false, sms: false },
-  { type: 'whale', label: '鲸鱼买入', email: false, telegram: false, sms: false },
+  { type: 'trade', label: '交易通知', email: false, telegram: false },
+  { type: 'event', label: '事件新闻', email: false, telegram: false },
+  { type: 'whale', label: '鲸鱼买入', email: false, telegram: false },
 ])
 
 // 广播表单
@@ -50,7 +49,6 @@ const loadSettings = async () => {
       ...row,
       email: map[`${row.type}:email`] ?? false,
       telegram: map[`${row.type}:telegram`] ?? false,
-      sms: map[`${row.type}:sms`] ?? false,
     }))
   } catch (error) {
     ElMessage.error('加载通知设置失败')
@@ -65,7 +63,6 @@ const saveSettings = async () => {
     const payload = rows.value.flatMap((row) => ([
       { type: row.type, channel: 'email', enabled: row.email },
       { type: row.type, channel: 'telegram', enabled: row.telegram },
-      { type: row.type, channel: 'sms', enabled: row.sms },
     ]))
 
     await saveNotificationSettings(payload)
@@ -82,7 +79,6 @@ const resetAll = () => {
     ...row,
     email: false,
     telegram: false,
-    sms: false,
   }))
 }
 
@@ -179,11 +175,6 @@ onMounted(() => {
         <el-table-column label="Telegram" width="130" align="center">
           <template #default="{ row }">
             <el-switch v-model="row.telegram" />
-          </template>
-        </el-table-column>
-        <el-table-column label="短信" width="130" align="center">
-          <template #default="{ row }">
-            <el-switch v-model="row.sms" disabled />
           </template>
         </el-table-column>
       </el-table>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue'
 import {
     fetchTradeWindows,
     createTradeWindow,
@@ -13,6 +13,7 @@ import {
     unbindTemplateFromWindow,
     fetchStrategyTemplates,
 } from '@/utils/investapi'
+import { connectTaskLogWS, triggerWindowSchedule, type TaskLogMessage } from '@/utils/tasklogapi'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Delete, Plus, Timer, VideoPlay, VideoPause } from '@element-plus/icons-vue'
 
@@ -322,6 +323,66 @@ const handleUnbind = async (templateId: number) => {
     } catch {}
 }
 
+// ── 时序分段执行实时日志 (T-0421) ──
+const wsConnected = ref(false)
+const wsInstance = ref<WebSocket | null>(null)
+const segmentLogs = ref<TaskLogMessage[]>([])
+const segmentLogContainer = ref<HTMLElement | null>(null)
+const triggeringWindow = ref(false)
+
+const currentWindowTaskId = ref<string | null>(null)
+
+const connectSegmentWS = () => {
+    if (wsInstance.value) wsInstance.value.close()
+    wsInstance.value = connectTaskLogWS(
+        null,
+        (msg: TaskLogMessage) => {
+            if (msg.type === 'task_started' && msg.task_type === 'window_schedule') {
+                currentWindowTaskId.value = msg.task_id || null
+                segmentLogs.value = []
+            }
+            const isOurTask = msg.task_id && msg.task_id === currentWindowTaskId.value
+            if (isOurTask && (msg.type === 'task_log' || msg.type === 'task_finished')) {
+                segmentLogs.value.push(msg)
+                scrollSegmentLogToBottom()
+            }
+        },
+        () => { wsConnected.value = false },
+    )
+    wsInstance.value.onopen = () => { wsConnected.value = true }
+}
+
+const scrollSegmentLogToBottom = () => {
+    nextTick(() => {
+        if (segmentLogContainer.value) segmentLogContainer.value.scrollTop = segmentLogContainer.value.scrollHeight
+    })
+}
+
+const levelColor = (level: string) => {
+    const map: Record<string, string> = { info: '#409eff', warning: '#e6a23c', error: '#f56c6c', debug: '#909399' }
+    return map[level || 'info'] || '#606266'
+}
+
+const formatLogTime = (ts: string) => {
+    if (!ts) return ''
+    try {
+        return new Date(ts).toLocaleTimeString('zh-CN', { hour12: false })
+    } catch { return ts }
+}
+
+const handleTriggerWindowCheck = async () => {
+    try {
+        await ElMessageBox.confirm('确定手动触发一次窗口调度检查？', '触发窗口检查', { type: 'info' })
+        triggeringWindow.value = true
+        const res = await triggerWindowSchedule()
+        ElMessage.success(res.data?.message || '窗口调度检查已触发')
+    } catch (e: any) {
+        if (e !== 'cancel') ElMessage.error(e.response?.data?.detail || '触发失败')
+    } finally {
+        triggeringWindow.value = false
+    }
+}
+
 // ── 跨日判断 ──
 const isCrossDay = computed(() => formData.value.time_start > formData.value.time_end)
 
@@ -338,6 +399,11 @@ const directiveLabel = (d: string) => {
 onMounted(() => {
     loadWindows()
     loadRouteDecision()
+    connectSegmentWS()
+})
+
+onBeforeUnmount(() => {
+    wsInstance.value?.close()
 })
 </script>
 
@@ -389,6 +455,31 @@ onMounted(() => {
                 </div>
             </div>
             <div v-else style="color: #ccc;">加载中...</div>
+        </el-card>
+
+        <!-- 时序分段执行实时日志 (T-0421) -->
+        <el-card shadow="never" style="margin-bottom: 12px;">
+            <template #header>
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-weight: 600;">时序分段执行实时日志</span>
+                        <span :style="{ color: wsConnected ? '#67c23a' : '#f56c6c', fontSize: '12px' }">● {{ wsConnected ? 'WS已连接' : 'WS未连接' }}</span>
+                        <el-button v-if="!wsConnected" size="small" @click="connectSegmentWS">重连</el-button>
+                    </div>
+                    <el-button size="small" type="primary" :loading="triggeringWindow" @click="handleTriggerWindowCheck">
+                        手动触发窗口检查
+                    </el-button>
+                </div>
+            </template>
+            <div ref="segmentLogContainer" class="segment-log-container">
+                <div v-for="(log, idx) in segmentLogs" :key="idx" class="segment-log-line">
+                    <span class="log-time">{{ formatLogTime(log.timestamp) }}</span>
+                    <span class="log-level" :style="{ color: levelColor(log.level || 'info') }">[{{ (log.level || 'info').toUpperCase() }}]</span>
+                    <span v-if="log.stage" class="log-stage">{{ log.stage }}</span>
+                    <span class="log-msg">{{ log.message || (log.type === 'task_finished' ? `任务${log.status || '完成'}` : '') }}</span>
+                </div>
+                <div v-if="!segmentLogs.length" style="text-align: center; color: #999; padding: 24px;">等待窗口调度日志… 可点击「手动触发窗口检查」或等待定时任务</div>
+            </div>
         </el-card>
 
         <!-- 工具栏 -->
@@ -615,3 +706,29 @@ onMounted(() => {
         </el-dialog>
     </div>
 </template>
+
+<style scoped>
+.segment-log-container {
+    font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 12px;
+    border-radius: 6px;
+    max-height: 280px;
+    overflow-y: auto;
+}
+.segment-log-line {
+    display: flex;
+    gap: 8px;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.segment-log-line .log-time { color: #6a9955; flex-shrink: 0; }
+.segment-log-line .log-level { font-weight: bold; flex-shrink: 0; }
+.segment-log-line .log-stage { color: #dcdcaa; flex-shrink: 0; }
+.segment-log-line .log-msg { color: #d4d4d4; overflow: hidden; text-overflow: ellipsis; }
+</style>

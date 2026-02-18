@@ -553,21 +553,25 @@ onMounted(async () => {
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .trade-container {
   padding: 20px;
+  overflow-x: auto;
 }
 .section-card {
   margin-bottom: 20px;
 }
 .card-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
 }
 .wallet-info {
   display: flex;
-  gap: 40px;
+  flex-wrap: wrap;
+  gap: 24px;
 }
 .wallet-item {
   display: flex;
@@ -589,5 +593,15 @@ onMounted(async () => {
 }
 .trade-form {
   max-width: 600px;
+}
+/* T-0305 表格横向滚动、弹窗小屏自适应 */
+.trade-container :deep(.el-table) {
+  min-width: 700px;
+}
+@include respond-md {
+  .trade-container :deep(.el-dialog) {
+    width: 90% !important;
+    max-width: 400px;
+  }
 }
 </style>
