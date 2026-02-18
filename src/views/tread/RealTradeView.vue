@@ -4,11 +4,13 @@ import { ElMessage } from 'element-plus'
 import { fetchWalletBalance, executeTrade, fetchTradeRecords, fetchUserAssets } from '@/utils/tradapi'
 import { fetchRealTimePrice } from '@/utils/priceapi'
 import { fetchAllCoins } from '@/utils/coinapi'
+import { fetchExchangeCredentials } from '@/utils/exchangeCredentialApi'
 
 const TRADE_TYPE = 'real'
 
 // 钱包
 const walletBalance = ref(0)
+const hasEnabledCredential = ref(false)
 
 // 实时价格 + 币种列表
 const marketPrices = ref<any[]>([])
@@ -100,6 +102,18 @@ const loadRecords = async () => {
   }
 }
 
+// 加载交易所凭证状态（至少有一个启用凭证才允许实盘交易）
+const loadCredentialStatus = async () => {
+  try {
+    const res = await fetchExchangeCredentials()
+    const creds = res.data?.data || []
+    hasEnabledCredential.value = creds.some((c: any) => c.enabled)
+  } catch (e) {
+    hasEnabledCredential.value = false
+    console.error('加载交易所凭证失败', e)
+  }
+}
+
 // 刷新所有数据
 const refreshAll = () => {
   loadWallet()
@@ -120,6 +134,10 @@ const handleSyncBalance = async () => {
 
 // 交易执行
 const handleTrade = async (action: 'buy' | 'sell') => {
+  if (!hasEnabledCredential.value) {
+    ElMessage.warning('请先在「交易所API凭证」中绑定并启用至少一个凭证')
+    return
+  }
   if (!selectedCoinId.value) {
     ElMessage.warning('请选择币种')
     return
@@ -169,6 +187,7 @@ const formatPrice = (price: number) => {
 
 onMounted(async () => {
   await Promise.all([loadCoins(), loadPrices()])
+  loadCredentialStatus()
   loadWallet()
   loadAssets()
   loadRecords()
@@ -222,6 +241,14 @@ onMounted(async () => {
     <!-- 交易表单 -->
     <el-card class="section-card">
       <template #header><span>实盘交易</span></template>
+      <el-alert
+        v-if="!hasEnabledCredential"
+        title="未检测到已启用的交易所 API 凭证，当前不可下单。请先前往「交易所API凭证」完成绑定。"
+        type="warning"
+        :closable="false"
+        show-icon
+        style="margin-bottom: 12px;"
+      />
       <el-form label-width="100px" class="trade-form">
         <el-form-item label="选择币种">
           <el-select v-model="selectedCoinId" filterable placeholder="请选择币种" style="width: 250px;">
@@ -247,10 +274,10 @@ onMounted(async () => {
           </span>
         </el-form-item>
         <el-form-item>
-          <el-button type="success" @click="handleTrade('buy')" :loading="trading" :disabled="!selectedCoinId">
+          <el-button type="success" @click="handleTrade('buy')" :loading="trading" :disabled="!selectedCoinId || !hasEnabledCredential">
             买入
           </el-button>
-          <el-button type="danger" @click="handleTrade('sell')" :loading="trading" :disabled="!selectedCoinId">
+          <el-button type="danger" @click="handleTrade('sell')" :loading="trading" :disabled="!selectedCoinId || !hasEnabledCredential">
             卖出
           </el-button>
         </el-form-item>
